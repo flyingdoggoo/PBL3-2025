@@ -1,0 +1,22 @@
+﻿<h2>Login</h2>
+
+<form method="post" asp-controller="Account" asp-action="Login">
+    <div>
+        <label>Email</label>
+        <input name="email" type="email" required />
+    </div>
+    <div>
+        <label>Password</label>
+        <input name="password" type="password" required />
+    </div>
+    <div>
+        <label>Remember Me</label>
+        <input name="rememberMe" type="checkbox" />
+    </div>
+    <button type="submit">Login</button>
+</form>
+
+@if (ViewBag.Error != null)
+{
+    <p style="color:red">@ViewBag.Error</p>
+}

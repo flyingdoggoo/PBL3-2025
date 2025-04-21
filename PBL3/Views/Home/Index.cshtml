@@ -1,8 +1,39 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
-}
+﻿@* @{ *@
+@*     ViewData["Title"] = "Home Page"; *@
+@* } *@
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+@* <div class="text-center"> *@
+@*     <h1 class="display-4">Welcome</h1> *@
+@*     <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p> *@
+@* </div> *@
+
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<AppUser> SignInManager
+
+@if (!SignInManager.IsSignedIn(User))
+{
+    <div class="login-form">
+        <h3>Login</h3>
+        <form asp-controller="Account" asp-action="Login" method="post">
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" class="form-control" id="email" name="email" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" class="form-control" id="password" name="password" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Login</button>
+            <a asp-controller="Account" asp-action="Register" class="btn btn-link">Register</a>
+        </form>
+    </div>
+}
+else
+{
+    <div class="welcome-message">
+        <h3>Welcome, @User.Identity?.Name!</h3>
+        <form asp-controller="Account" asp-action="Logout" method="post">
+            <button type="submit" class="btn btn-secondary">Logout</button>
+        </form>
+    </div>
+}

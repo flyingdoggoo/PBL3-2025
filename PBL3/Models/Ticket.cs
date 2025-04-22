@@ -10,7 +10,7 @@ namespace PBL3.Models
 
         // --- Khóa ngoại (Foreign Keys) ---
         [Required]
-        public int PassengerId { get; set; } // Khóa ngoại tham chiếu đến Passenger
+        public String? PassengerId { get; set; } // Khóa ngoại tham chiếu đến Passenger
 
         [Required]
         public int FlightId { get; set; } // Khóa ngoại tham chiếu đến Flight
@@ -19,7 +19,7 @@ namespace PBL3.Models
         public int? SectionId { get; set; } // Dấu ? cho biết khóa ngoại này có thể là NULL (optional relationship)
 
         // Tùy chọn: Khóa ngoại tham chiếu đến Employee nếu một nhân viên đã hỗ trợ đặt vé
-        public int? BookingEmployeeId { get; set; } // Dấu ? cho biết khóa ngoại này có thể là NULL
+        public String? BookingEmployeeId { get; set; } // Dấu ? cho biết khóa ngoại này có thể là NULL
 
         // --- Thuộc tính thông thường ---
         [Required]

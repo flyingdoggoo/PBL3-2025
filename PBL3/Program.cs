@@ -1,14 +1,16 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using dotenv.net;
 using PBL3.Data;
 using PBL3.Models; 
 
 var builder = WebApplication.CreateBuilder(args);
+DotEnv.Load();
 
 builder.Services.AddControllersWithViews();
 
-var connectionString = builder.Configuration.GetConnectionString("KienConnection");
+var connectionString = builder.Configuration.GetConnectionString("CONNECTION_STRING");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));

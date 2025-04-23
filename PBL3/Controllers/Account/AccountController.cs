@@ -109,9 +109,31 @@ public class AccountController : Controller
             return NotFound();
         }
 
-        user.FullName = model.FullName;
-        user.Age = model.Age;
-        user.Address = model.Address;
+        bool hasChanges = false;
+
+        if (user.FullName != model.FullName)
+        {
+            user.FullName = model.FullName;
+            hasChanges = true;
+        }
+
+        if (user.Age != model.Age)
+        {
+            user.Age = model.Age;
+            hasChanges = true;
+        }
+
+        if (user.Address != model.Address)
+        {
+            user.Address = model.Address;
+            hasChanges = true;
+        }
+
+        // Nếu không có thay đổi, quay lại trang Profile
+        if (!hasChanges)
+        {
+            return RedirectToAction(nameof(Profile));
+        }
 
         // Chỉ admin mới có quyền thay đổi Role
         var result = await _userManager.UpdateAsync(user);
@@ -126,6 +148,50 @@ public class AccountController : Controller
             ModelState.AddModelError(string.Empty, error.Description);
         }
 
+        return View(model);
+    }
+
+    [Authorize]
+    [HttpGet]
+    public IActionResult ChangePassword()
+    {
+        return View();
+    }
+
+    [Authorize]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null)
+        {
+            return NotFound();
+        }
+
+        // Thay đổi mật khẩu
+        var result = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
+        if (result.Succeeded)
+        {
+            // Cập nhật security stamp để đảm bảo cookie được cập nhật
+            await _userManager.UpdateSecurityStampAsync(user);
+
+            // Đăng nhập lại với cookie mới
+            await _signInManager.SignInAsync(user, isPersistent: false);
+
+            TempData["SuccessMessage"] = "Mật khẩu của bạn đã được thay đổi thành công.";
+            return RedirectToAction(nameof(Profile));
+        }
+
+        foreach (var error in result.Errors)
+        {
+            ModelState.AddModelError(string.Empty, error.Description);
+        }
         return View(model);
     }
 }

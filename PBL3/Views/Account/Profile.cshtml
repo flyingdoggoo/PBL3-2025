@@ -20,12 +20,12 @@
                 </div>
                 <div class="card-body">
                     <div class="row mb-3">
-                        <div class="col-md-4 font-weight-bold">Họ và tên:</div>
-                        <div class="col-md-8">@Model.FullName</div>
-                    </div>
-                    <div class="row mb-3">
                         <div class="col-md-4 font-weight-bold">Email:</div>
                         <div class="col-md-8">@Model.Email</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 font-weight-bold">Họ và tên:</div>
+                        <div class="col-md-8">@Model.FullName</div>
                     </div>
                     <div class="row mb-3">
                         <div class="col-md-4 font-weight-bold">Tuổi:</div>
@@ -35,14 +35,11 @@
                         <div class="col-md-4 font-weight-bold">Địa chỉ:</div>
                         <div class="col-md-8">@Model.Address</div>
                     </div>
-                    <div class="row mb-3">
-                        <div class="col-md-4 font-weight-bold">Vai trò:</div>
-                        <div class="col-md-8">@Model.Role</div>
-                    </div>
+                    
                 </div>
                 <div class="card-footer">
                     <a asp-controller="Account" asp-action="Edit" class="btn btn-primary">Chỉnh sửa thông tin</a>
-
+                    <a asp-controller="Account" asp-action="ChangePassword" class="btn btn-secondary mx-4">Đổi mật khẩu</a>
                     @* Thêm nút quay lại tùy theo vai trò người dùng *@
                     @if (User.IsInRole("Admin"))
                     {

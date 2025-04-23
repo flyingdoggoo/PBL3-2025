@@ -11,18 +11,23 @@
                     <h4>Chỉnh sửa thông tin cá nhân</h4>
                 </div>
                 <div class="card-body">
-                    <form asp-action="Edit" method="post">
+                    <form asp-action="Edit" method="post" id="editProfileForm" onsubmit="return validateForm()">
                         <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                        <input type="hidden" id="originalFullName" value="@Model.FullName" />
+                        <input type="hidden" id="originalAge" value="@Model.Age" />
+                        <input type="hidden" id="originalAddress" value="@Model.Address" />
+                        <input type="hidden" id="originaRole" value="@Model.Role" />
+
+                        <div class="form-group mb-3">
+                            <label asp-for="Email" class="control-label">Email</label>
+                            <input asp-for="Email" class="form-control" readonly />
+                        </div>
 
                         <div class="form-group mb-3">
                             <label asp-for="FullName" class="control-label">Họ và tên</label>
                             <input asp-for="FullName" class="form-control" />
                             <span asp-validation-for="FullName" class="text-danger"></span>
-                        </div>
-
-                        <div class="form-group mb-3">
-                            <label asp-for="Email" class="control-label">Email</label>
-                            <input asp-for="Email" class="form-control" readonly />
                         </div>
 
                         <div class="form-group mb-3">
@@ -37,7 +42,7 @@
                             <span asp-validation-for="Address" class="text-danger"></span>
                         </div>
 
-                        <div class="form-group mb-3">
+                        <div class="form-group mb-3" style="display: none;">
                             <label asp-for="Role" class="control-label">Vai trò</label>
                             <input asp-for="Role" class="form-control" readonly />
                         </div>
@@ -57,4 +62,32 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+    <script>
+                // Ngăn chặn form submit khi nhấn Enter và di chuyển focus đến trường tiếp theo
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('editProfileForm');
+            const inputs = Array.from(form.querySelectorAll('input, textarea')); // Chuyển NodeList thành mảng
+
+            inputs.forEach((input, index) => {
+                input.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+
+                        // Di chuyển focus đến trường tiếp theo
+                        const nextInput = inputs[index + 1];
+                        if (nextInput) {
+                            nextInput.focus();
+                        }
+
+                        return false;
+                    }
+                });
+            });
+        });
+
+
+        function validateForm() {
+            return true;
+        }
+    </script>
 }

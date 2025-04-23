@@ -10,7 +10,7 @@ DotEnv.Load();
 
 builder.Services.AddControllersWithViews();
 
-var connectionString = builder.Configuration.GetConnectionString("CONNECTION_STRING");
+var connectionString = builder.Configuration.GetConnectionString("TienConnection");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));

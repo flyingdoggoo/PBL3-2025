@@ -68,4 +68,127 @@ public class AccountController : Controller
         await _signInManager.SignOutAsync();
         return RedirectToAction("Login");
     }
+    [Authorize] 
+    public async Task<IActionResult> Profile()
+    {
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null)
+        {
+            return NotFound();
+        }
+
+        return View(user);
+    }
+
+    [Authorize] 
+    [HttpGet]
+    public async Task<IActionResult> Edit()
+    {
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null)
+        {
+            return NotFound();
+        }
+
+        return View(user);
+    }
+
+    [Authorize]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(AppUser model)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null)
+        {
+            return NotFound();
+        }
+
+        bool hasChanges = false;
+
+        if (user.FullName != model.FullName)
+        {
+            user.FullName = model.FullName;
+            hasChanges = true;
+        }
+
+        if (user.Age != model.Age)
+        {
+            user.Age = model.Age;
+            hasChanges = true;
+        }
+
+        if (user.Address != model.Address)
+        {
+            user.Address = model.Address;
+            hasChanges = true;
+        }
+
+        // Quay lại trang Profile
+        if (!hasChanges)
+        {
+            return RedirectToAction(nameof(Profile));
+        }
+
+        var result = await _userManager.UpdateAsync(user);
+        if (result.Succeeded)
+        {
+            TempData["SuccessMessage"] = "Thông tin cá nhân đã được cập nhật thành công.";
+            return RedirectToAction(nameof(Profile));
+        }
+
+        foreach (var error in result.Errors)
+        {
+            ModelState.AddModelError(string.Empty, error.Description);
+        }
+
+        return View(model);
+    }
+
+    [Authorize]
+    [HttpGet]
+    public IActionResult ChangePassword()
+    {
+        return View();
+    }
+
+    [Authorize]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null)
+        {
+            return NotFound();
+        }
+
+        // Thay đổi mật khẩu
+        var result = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
+        if (result.Succeeded)
+        {
+            await _userManager.UpdateSecurityStampAsync(user);
+
+            await _signInManager.SignInAsync(user, isPersistent: false);
+
+            TempData["SuccessMessage"] = "Mật khẩu của bạn đã được thay đổi thành công.";
+            return RedirectToAction(nameof(Profile));
+        }
+
+        foreach (var error in result.Errors)
+        {
+            ModelState.AddModelError(string.Empty, error.Description);
+        }
+        return View(model);
+    }
 }

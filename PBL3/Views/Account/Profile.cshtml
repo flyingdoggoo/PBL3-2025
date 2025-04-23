@@ -1,0 +1,60 @@
+﻿@model PBL3.Models.AppUser
+@{
+    ViewData["Title"] = "Thông tin cá nhân";
+}
+
+<div class="container mt-4">
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4>Thông tin cá nhân</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4 font-weight-bold">Email:</div>
+                        <div class="col-md-8">@Model.Email</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 font-weight-bold">Họ và tên:</div>
+                        <div class="col-md-8">@Model.FullName</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 font-weight-bold">Tuổi:</div>
+                        <div class="col-md-8">@Model.Age</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 font-weight-bold">Địa chỉ:</div>
+                        <div class="col-md-8">@Model.Address</div>
+                    </div>
+                    
+                </div>
+                <div class="card-footer">
+                    <a asp-controller="Account" asp-action="Edit" class="btn btn-primary">Chỉnh sửa thông tin</a>
+                    <a asp-controller="Account" asp-action="ChangePassword" class="btn btn-secondary mx-4">Đổi mật khẩu</a>
+                    @* Thêm nút quay lại tùy theo vai trò người dùng *@
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <a asp-controller="SystemManager" asp-action="Index" class="btn btn-secondary">Quay lại</a>
+                    }
+                    else if (User.IsInRole("Employee"))
+                    {
+                        <a asp-controller="Employee" asp-action="Index" class="btn btn-secondary">Quay lại</a>
+                    }
+                    else
+                    {
+                        <a asp-controller="Passenger" asp-action="Index" class="btn btn-secondary">Quay lại</a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -16,6 +16,27 @@ namespace PBL3.Data
 
             await SeedRoles(roleManager);
             await SeedTestUsers(userManager);
+
+            // Tạo tài khoản mặc định
+            var defaultUser = new AppUser
+            {
+                UserName = "employee@example.com",
+                Email = "employee@example.com",
+                FullName = "Default Employee",
+                Address = "Default Address",
+                Age = 30,
+                Role = "Employee",
+                EmailConfirmed = true
+            };
+
+            if (await userManager.FindByEmailAsync(defaultUser.Email) == null)
+            {
+                var result = await userManager.CreateAsync(defaultUser, "123");
+                if (result.Succeeded)
+                {
+                    await userManager.AddToRoleAsync(defaultUser, "Employee");
+                }
+            }
         }
 
         private static async Task SeedRoles(RoleManager<IdentityRole> roleManager)

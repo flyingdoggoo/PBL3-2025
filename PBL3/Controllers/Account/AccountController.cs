@@ -129,13 +129,12 @@ public class AccountController : Controller
             hasChanges = true;
         }
 
-        // Nếu không có thay đổi, quay lại trang Profile
+        // Quay lại trang Profile
         if (!hasChanges)
         {
             return RedirectToAction(nameof(Profile));
         }
 
-        // Chỉ admin mới có quyền thay đổi Role
         var result = await _userManager.UpdateAsync(user);
         if (result.Succeeded)
         {
@@ -178,10 +177,8 @@ public class AccountController : Controller
         var result = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
         if (result.Succeeded)
         {
-            // Cập nhật security stamp để đảm bảo cookie được cập nhật
             await _userManager.UpdateSecurityStampAsync(user);
 
-            // Đăng nhập lại với cookie mới
             await _signInManager.SignInAsync(user, isPersistent: false);
 
             TempData["SuccessMessage"] = "Mật khẩu của bạn đã được thay đổi thành công.";

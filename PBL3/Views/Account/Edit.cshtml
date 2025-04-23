@@ -63,17 +63,14 @@
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
     <script>
-                // Ngăn chặn form submit khi nhấn Enter và di chuyển focus đến trường tiếp theo
         document.addEventListener('DOMContentLoaded', function () {
             const form = document.getElementById('editProfileForm');
-            const inputs = Array.from(form.querySelectorAll('input, textarea')); // Chuyển NodeList thành mảng
+            const inputs = Array.from(form.querySelectorAll('input, textarea')); 
 
             inputs.forEach((input, index) => {
                 input.addEventListener('keydown', function (e) {
                     if (e.key === 'Enter') {
                         e.preventDefault();
-
-                        // Di chuyển focus đến trường tiếp theo
                         const nextInput = inputs[index + 1];
                         if (nextInput) {
                             nextInput.focus();

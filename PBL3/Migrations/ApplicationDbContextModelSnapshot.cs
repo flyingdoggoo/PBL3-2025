@@ -155,6 +155,39 @@ namespace PBL3.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("PBL3.Models.Airport", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)");
+
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Airports");
+                });
+
             modelBuilder.Entity("PBL3.Models.AppUser", b =>
                 {
                     b.Property<string>("Id")
@@ -248,6 +281,9 @@ namespace PBL3.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("FlightId"));
 
+                    b.Property<int>("BasePrice")
+                        .HasColumnType("int");
+
                     b.Property<int>("Capacity")
                         .HasColumnType("int");
 
@@ -259,23 +295,23 @@ namespace PBL3.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
-                    b.Property<string>("ReachingDestination")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                    b.Property<int>("ReachingDestination")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("ReachingTime")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("StartingDestination")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                    b.Property<int>("StartingDestination")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("StartingTime")
                         .HasColumnType("datetime2");
 
                     b.HasKey("FlightId");
+
+                    b.HasIndex("ReachingDestination");
+
+                    b.HasIndex("StartingDestination");
 
                     b.ToTable("Flights");
                 });
@@ -434,6 +470,25 @@ namespace PBL3.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("PBL3.Models.Flight", b =>
+                {
+                    b.HasOne("PBL3.Models.Airport", "ArrivalAirport")
+                        .WithMany()
+                        .HasForeignKey("ReachingDestination")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("PBL3.Models.Airport", "DepartureAirport")
+                        .WithMany()
+                        .HasForeignKey("StartingDestination")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("ArrivalAirport");
+
+                    b.Navigation("DepartureAirport");
                 });
 
             modelBuilder.Entity("PBL3.Models.Section", b =>

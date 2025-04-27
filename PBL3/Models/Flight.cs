@@ -1,5 +1,7 @@
 ﻿using static System.Collections.Specialized.BitVector32;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
 namespace PBL3.Models
 {
@@ -8,10 +10,6 @@ namespace PBL3.Models
         [Key]
         public int FlightId { get; set; } // Đổi từ String sang int
 
-        // Có thể dùng String nếu mã chuyến bay là dạng 'VN123'
-        // [Key]
-        // [StringLength(10)]
-        // public string FlightNumber { get; set; }
 
         [Required]
         [StringLength(20, ErrorMessage = "Số hiệu chuyến bay là bắt buộc và không quá 20 ký tự.")]
@@ -26,17 +24,22 @@ namespace PBL3.Models
         [Required]
         public DateTime ReachingTime { get; set; } // Thời gian đến nơi
 
-        [Required]
-        [StringLength(100)]
-        public string StartingDestination { get; set; } // Điểm khởi hành
+        [ForeignKey("DepartureAirport")]
+        public int StartingDestination { get; set; }
 
-        [Required]
-        [StringLength(100)]
-        public string ReachingDestination { get; set; } // Điểm đến
+        [DeleteBehavior(DeleteBehavior.NoAction)]
+        public virtual Airport DepartureAirport { get; set; }
+
+        [ForeignKey("ArrivalAirport")]
+        public int ReachingDestination { get; set; }
+
+        [DeleteBehavior(DeleteBehavior.NoAction)]
+        public virtual Airport ArrivalAirport { get; set; }
 
         [Range(0, int.MaxValue)]
-        public int Distance { get; set; } // Khoảng cách (ví dụ: km)
+        public int Distance { get; set; } 
 
+        public int BasePrice { get; set; }
         // --- Thuộc tính điều hướng (Navigation Properties) ---
 
         // Một chuyến bay có nhiều khu vực chỗ ngồi (Mối quan hệ một-nhiều)

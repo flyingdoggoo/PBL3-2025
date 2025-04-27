@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using PBL3.Models;
+using PBL3.Models.ViewModels;
 
 public class AccountController : Controller
 {
@@ -45,6 +46,48 @@ public class AccountController : Controller
         return View();
     }
 
+    [HttpGet]
+    public IActionResult Register()
+    {
+        return View();
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Register(RegisterViewModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+        var existingEmail = await _userManager.FindByEmailAsync(model.Email);
+        if (existingEmail != null)
+        {
+            ModelState.AddModelError("Email", "Email already exists.");
+            return View(model);
+        }
+        var user = new AppUser
+        {
+            UserName = model.Email,
+            Email = model.Email,
+            FullName = model.FullName,
+            Age = model.Age,
+            Address = model.Address,
+            Role = "Passenger"
+        };
+        var result = await _userManager.CreateAsync(user, model.Password);
+        if (result.Succeeded)
+        {
+            await _userManager.AddToRoleAsync(user, "Passenger");
+            return RedirectToAction(nameof(Login));
+        }
+        foreach (var error in result.Errors)
+        {
+            ModelState.AddModelError(string.Empty, error.Description);
+        }
+        return View(model);
+    }
+
+
     [Authorize(Roles = "Admin")]
     public IActionResult AdminDashboard()
     {
@@ -66,7 +109,7 @@ public class AccountController : Controller
     public async Task<IActionResult> Logout()
     {
         await _signInManager.SignOutAsync();
-        return RedirectToAction("Login");
+        return RedirectToAction("Index", "Home");
     }
     [Authorize] 
     public async Task<IActionResult> Profile()

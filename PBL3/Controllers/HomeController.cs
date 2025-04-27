@@ -32,7 +32,6 @@ namespace PBL3.Controllers
                 PassengerCount = 1,
                 Airports = await GetAirportsAsync()
             };
-
             return View(viewModel);
         }
 
@@ -56,11 +55,10 @@ namespace PBL3.Controllers
                 return View("Index", model);
             }
 
-            // Mở rộng khoảng ngày tìm kiếm (±3 ngày để đảm bảo tìm được kết quả)
+            // Mở rộng khoảng ngày tìm kiếm
             var departureStart = model.DepartureDate.Date;
             var departureEnd = model.DepartureDate.Date.AddDays(2);
 
-            Console.WriteLine($"Searching flights from {departureStart:yyyy-MM-dd} to {departureEnd:yyyy-MM-dd}");
 
             // Tìm kiếm chuyến bay đi 
             model.OutboundFlights = await _context.Flights
@@ -89,7 +87,6 @@ namespace PBL3.Controllers
             }
 
             model.Airports = await GetAirportsAsync();
-            Console.WriteLine($"Returning view with {model.OutboundFlights?.Count ?? 0} outbound flights");
             return View("SearchResults", model);
         }
         private async Task<List<SelectListItem>> GetAirportsAsync()

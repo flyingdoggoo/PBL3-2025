@@ -1,20 +1,19 @@
 ﻿<h2>Login</h2>
 
-<form method="post" asp-controller="Account" asp-action="Login">
-    <div>
-        <label>Email</label>
-        <input name="email" type="email" required />
-    </div>
-    <div>
-        <label>Password</label>
-        <input name="password" type="password" required />
-    </div>
-    <div>
-        <label>Remember Me</label>
-        <input name="rememberMe" type="checkbox" />
-    </div>
-    <button type="submit">Login</button>
-</form>
+<div class="login-form">
+    <form asp-controller="Account" asp-action="Login" method="post">
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" class="form-control" id="email" name="email" required>
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" class="form-control" id="password" name="password" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Login</button>
+        <a asp-controller="Account" asp-action="Register" class="btn btn-link">Register</a>
+    </form>
+</div>
 
 @if (ViewBag.Error != null)
 {

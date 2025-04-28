@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using PBL3.Models;
+using PBL3.Models.ViewModels;
 
 namespace PBL3.Controllers
 {

@@ -33,6 +33,25 @@
                             </li>
                         }
                     </ul>
+                    <ul class="navbar-nav">
+                        @if (User.Identity.IsAuthenticated)
+                        {
+                            <li class="nav-item">
+                                <form asp-controller="Account" asp-action="Logout" method="post" class="form-inline">
+                                    <button type="submit" class="btn btn-link nav-link text-dark">Log out</button>
+                                </form>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Account" asp-action="Login">Log in</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Account" asp-action="Register">Sign up</a>
+                            </li>
+                        }
+                    </ul>
                 </div>
             </div>
         </nav>

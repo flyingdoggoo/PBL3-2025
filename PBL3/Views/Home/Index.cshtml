@@ -1,17 +1,71 @@
-﻿@* @{ *@
-@*     ViewData["Title"] = "Home Page"; *@
-@* } *@
+﻿@* --- Thêm hoặc sửa form này trong Views/Home/Index.cshtml --- *@
+@model PBL3.Models.ViewModels.FlightSearchViewModel /* Đổi model nếu cần */
 
-@* <div class="text-center"> *@
-@*     <h1 class="display-4">Welcome</h1> *@
-@*     <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p> *@
-@* </div> *@
-
-@using Microsoft.AspNetCore.Identity
-@inject SignInManager<AppUser> SignInManager
-
-@if (SignInManager.IsSignedIn(User))
+@if (ViewData["needsSearch"] as bool? == true)
 {
-    <h3>Welcome, @User.Identity?.Name!</h3>
+    <div class="alert alert-info">Vui lòng nhập thông tin để tìm chuyến bay.</div>
 }
 
+<div class="container search-form-container mb-5 mt-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="fas fa-search me-2"></i> Tìm kiếm chuyến bay</h5>
+        </div>
+        <div class="card-body">
+            <form asp-controller="FlightSearch" asp-action="Index" method="get">
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
+                <div class="row g-3 align-items-end">
+                    <div class="col-md">
+                        <label asp-for="DepartureCity" class="form-label"></label>
+                        <input asp-for="DepartureCity" class="form-control" placeholder="Nhập thành phố/sân bay đi" />
+                        <span asp-validation-for="DepartureCity" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md">
+                        <label asp-for="ArrivalCity" class="form-label"></label>
+                        <input asp-for="ArrivalCity" class="form-control" placeholder="Nhập thành phố/sân bay đến" />
+                        <span asp-validation-for="ArrivalCity" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-auto">
+                        <label asp-for="DepartureDate" class="form-label"></label>
+                        <input asp-for="DepartureDate" type="date" class="form-control" />
+                        <span asp-validation-for="DepartureDate" class="text-danger small"></span>
+                    </div>
+                    @*<div class="col-md-auto">
+                        <label asp-for="Passengers" class="form-label"></label>
+                        <input asp-for="Passengers" type="number" min="1" class="form-control" />
+                         <span asp-validation-for="Passengers" class="text-danger small"></span>
+                    </div>*@
+                    <div class="col-md-auto d-grid">
+                        @* d-grid để button chiếm hết chiều rộng cột *@
+                        <button type="submit" class="btn btn-warning fw-bold">
+                            <i class="fas fa-search me-1"></i> Tìm ngay
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@* ... Các phần khác của trang chủ ... *@
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        // Script set min date cho input date nếu cần
+         document.addEventListener('DOMContentLoaded', function() {
+            var today = new Date().toISOString().split('T')[0];
+            var dateInput = document.querySelector('input[type="date"][name="DepartureDate"]');
+            if (dateInput) {
+                dateInput.setAttribute('min', today);
+                // Set default value if model value is default (today)
+                 if (dateInput.value === '@DateTime.Today.ToString("yyyy-MM-dd")') {
+                     // Optionally set it empty or keep today as default
+                     // dateInput.value = '';
+                 }
+
+            }
+         });
+    </script>
+}

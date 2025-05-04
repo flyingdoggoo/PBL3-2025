@@ -1,0 +1,36 @@
+﻿@model PBL3.Models.Ticket
+@{
+    ViewData["Title"] = "Xác nhận Hủy vé";
+}
+
+<h3 class="text-danger">@ViewData["Title"]</h3>
+<hr />
+@await Html.PartialAsync("_StatusMessagePartial")
+
+<div class="alert alert-warning">
+    <strong>Bạn có chắc chắn muốn hủy vé này không? Hành động này không thể hoàn tác.</strong><br />
+    Số ghế trống trên chuyến bay sẽ được cập nhật lại.
+</div>
+
+<div>
+    <h4>Thông tin Vé cần hủy</h4>
+    <dl class="row">
+        <dt class="col-sm-3">Mã vé:</dt>
+        <dd class="col-sm-9">@Model.TicketId</dd>
+        <dt class="col-sm-3">Hành khách:</dt>
+        <dd class="col-sm-9">@Model.Passenger?.FullName</dd>
+        <dt class="col-sm-3">Chuyến bay:</dt>
+        <dd class="col-sm-9">@Model.Flight?.FlightNumber (@Model.Flight?.StartingDestination - @Model.Flight?.ReachingDestination)</dd>
+        <dt class="col-sm-3">Khởi hành:</dt>
+        <dd class="col-sm-9">@Model.Flight?.StartingTime.ToString("dd/MM/yyyy HH:mm")</dd>
+        <dt class="col-sm-3">Giá vé:</dt>
+        <dd class="col-sm-9">@Model.Price.ToString("N0") VNĐ</dd>
+    </dl>
+
+    <form asp-action="Cancel">
+        <input type="hidden" asp-for="TicketId" />
+        <button type="submit" class="btn btn-danger">Xác nhận Hủy vé</button>
+        <a asp-action="Index" class="btn btn-secondary">Không hủy</a>
+        <a asp-action="Details" asp-route-id="@Model.TicketId" class="btn btn-outline-info">Xem lại chi tiết vé</a>
+    </form>
+</div>

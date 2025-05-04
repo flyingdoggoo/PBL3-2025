@@ -25,7 +25,7 @@ namespace PBL3.Data
                 FullName = "Default Employee",
                 Address = "Default Address",
                 Age = 30,
-                Role = "Employee",
+                //Role = "Employee",
                 EmailConfirmed = true
             };
 
@@ -71,7 +71,7 @@ namespace PBL3.Data
                 FullName = "Test User",
                 Age = 30,
                 Address = "123 Seed St, Dev City",
-                Role = role
+                //Role = role
             };
             await CreateUser(userManager, admin, "abc123!", "Admin");
             Console.WriteLine($"Created user: {admin.Email}");
@@ -93,7 +93,7 @@ namespace PBL3.Data
                 FullName = "Test User",
                 Age = 30,
                 Address = "123 Seed St, Dev City",
-                Role = role1
+                //Role = role1
             };
             await CreateUser(userManager, employee, "abc123!", "Employee");
             Console.WriteLine($"Created user: {employee.Email}");
@@ -115,7 +115,7 @@ namespace PBL3.Data
                 FullName = "Test User",
                 Age = 30,
                 Address = "123 Seed St, Dev City",
-                Role = role2
+                //Role = role2
             };
             await CreateUser(userManager, passenger, "abc123!", "Passenger");
             Console.WriteLine($"Created user: {passenger.Email}");

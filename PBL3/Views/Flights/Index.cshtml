@@ -1,0 +1,139 @@
+﻿@model IEnumerable<PBL3.Models.Flight> 
+@using PBL3.Utils 
+
+@{
+    ViewData["Title"] = "Quản lý Chuyến bay";
+    // Layout = "_AdminLayout"; // Đã có trong _ViewStart
+
+    // Helper để kiểm tra nếu Model là PaginatedList
+    bool isPaginated = Model is PaginatedList<PBL3.Models.Flight>;
+    PaginatedList<PBL3.Models.Flight>? paginatedModel = isPaginated ? (PaginatedList<PBL3.Models.Flight>)Model : null;
+
+    // Lấy danh sách thực tế để kiểm tra Any()
+    var flightList = isPaginated ? paginatedModel : Model.ToList();
+}
+
+<h1 class="display-6 mb-3">@ViewData["Title"]</h1>
+
+@await Html.PartialAsync("_StatusMessagePartial")
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Bộ lọc & Tìm kiếm</h5>
+            <a asp-action="Create" class="btn btn-sm btn-success">
+                <i class="fas fa-plus me-1"></i> Thêm mới
+            </a>
+        </div>
+    </div>
+    <div class="card-body bg-light"> @* Thêm nền nhẹ cho bộ lọc *@
+        <form asp-action="Index" method="get">
+            <div class="row g-2 align-items-end">
+                <div class="col-md">
+                    <label for="searchString" class="form-label visually-hidden">Nội dung tìm kiếm</label> @* Ẩn label nếu không cần thiết *@
+                    <input type="text" id="searchString" name="searchString" value="@ViewData["CurrentFilter"]" class="form-control form-control-sm" placeholder="Tìm theo số hiệu, điểm đi/đến, hãng bay...">
+                </div>
+                <div class="col-md-auto">
+                    <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-search me-1"></i> Tìm</button>
+                </div>
+                <div class="col-md-auto">
+                     <a asp-action="Index" class="btn btn-sm btn-outline-secondary"><i class="fas fa-eraser me-1"></i> Xóa lọc</a>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="card-body p-0"> @* p-0 để table chiếm hết card-body *@
+        <div class="table-responsive">
+            @* Bỏ table-bordered, thêm align-middle *@
+            <table class="table table-hover table-striped align-middle mb-0">
+                <thead class="table-light text-uppercase small"> @* Chữ nhỏ + In hoa cho header *@
+                    <tr>
+                         <th style="width: 10%;"> @* Đặt độ rộng cột nếu cần *@
+                            <a asp-action="Index" asp-route-sortOrder="@ViewData["NumberSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]">
+                               @Html.DisplayNameFor(model => flightList.FirstOrDefault()!.FlightNumber)
+                            </a>
+                        </th>
+                        <th style="width: 12%;">@Html.DisplayNameFor(model => flightList.FirstOrDefault()!.Airline)</th>
+                        <th>@Html.DisplayNameFor(model => flightList.FirstOrDefault()!.StartingDestination)</th>
+                        <th>@Html.DisplayNameFor(model => flightList.FirstOrDefault()!.ReachingDestination)</th>
+                         <th style="width: 13%;">
+                             <a asp-action="Index" asp-route-sortOrder="@ViewData["DateSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]">
+                                @Html.DisplayNameFor(model => flightList.FirstOrDefault()!.StartingTime)
+                             </a>
+                        </th>
+                        <th style="width: 13%;">@Html.DisplayNameFor(model => flightList.FirstOrDefault()!.ReachingTime)</th>
+                         <th class="text-center" style="width: 8%;">Ghế Trống/Tổng</th> @* Rút gọn header *@
+                         <th class="text-end" style="width: 10%;">
+                            <a asp-action="Index" asp-route-sortOrder="@ViewData["PriceSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]">
+                                @Html.DisplayNameFor(model => flightList.FirstOrDefault()!.Price)
+                             </a>
+                        </th>
+                        <th class="text-center" style="width: 15%;">Hành động</th> @* Tăng độ rộng cột Action *@
+                    </tr>
+                </thead>
+                <tbody>
+            @if (flightList.Any())
+            {
+                @foreach (var item in flightList) { // Dùng flightList đã lấy ở trên
+                    <tr>
+                        <td>@Html.DisplayFor(modelItem => item.FlightNumber)</td>
+                        <td>@Html.DisplayFor(modelItem => item.Airline)</td>
+                        <td>@Html.DisplayFor(modelItem => item.StartingDestination)</td>
+                        <td>@Html.DisplayFor(modelItem => item.ReachingDestination)</td>
+                         <td>@item.StartingTime.ToString("dd/MM/yy HH:mm")</td> @* Format ngắn hơn *@
+                        <td>@item.ReachingTime.ToString("dd/MM/yy HH:mm")</td>
+                         <td class="text-center">@Html.DisplayFor(modelItem => item.AvailableSeats)/@Html.DisplayFor(modelItem => item.Capacity)</td>
+                        <td class="text-end">@item.Price.ToString("N0") <small>VNĐ</small></td> @* Đơn vị nhỏ hơn *@
+                        <td class="text-center"> @* Căn giữa các nút *@
+                            <div class="btn-group" role="group"> @* Bỏ btn-group-sm *@
+                                 <a asp-action="Edit" asp-route-id="@item.FlightId" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit me-1"></i> Sửa</a>
+                                 <a asp-action="Details" asp-route-id="@item.FlightId" class="btn btn-sm btn-outline-info"><i class="fas fa-info-circle me-1"></i> Xem</a> @* Đổi thành Xem *@
+                                 <a asp-action="Delete" asp-route-id="@item.FlightId" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash-alt me-1"></i> Xóa</a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            } else {
+                 <tr>
+                    <td colspan="9" class="text-center text-muted p-4">
+                       <i class="fas fa-info-circle fa-2x mb-2"></i><br/>
+                       Không tìm thấy chuyến bay nào phù hợp.
+                    </td>
+                </tr>
+            }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    @* Phân trang nếu cần *@
+    @if (isPaginated && paginatedModel != null && paginatedModel.TotalPages > 1)
+    {
+        <div class="card-footer bg-light">
+            <nav aria-label="Flight page navigation">
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted">Hiển thị trang @paginatedModel.PageIndex / @paginatedModel.TotalPages (Tổng số: @paginatedModel.TotalCount chuyến bay)</small>
+                     <ul class="pagination pagination-sm mb-0"> @* pagination-sm cho gọn *@
+                        @{
+                            var prevDisabled = !paginatedModel.HasPreviousPage ? "disabled" : "";
+                            var nextDisabled = !paginatedModel.HasNextPage ? "disabled" : "";
+                        }
+                        <li class="page-item @prevDisabled">
+                          <a class="page-link" asp-action="Index"
+                             asp-route-sortOrder="@ViewData["CurrentSort"]"
+                             asp-route-pageNumber="@(paginatedModel.PageIndex - 1)"
+                             asp-route-currentFilter="@ViewData["CurrentFilter"]">Trước</a>
+                        </li>
+                         @* Optional: Logic hiển thị các số trang ở giữa *@
+                        <li class="page-item @nextDisabled">
+                          <a class="page-link" asp-action="Index"
+                             asp-route-sortOrder="@ViewData["CurrentSort"]"
+                             asp-route-pageNumber="@(paginatedModel.PageIndex + 1)"
+                             asp-route-currentFilter="@ViewData["CurrentFilter"]">Sau</a>
+                        </li>
+                      </ul>
+                </div>
+            </nav>
+        </div>
+    }
+</div>

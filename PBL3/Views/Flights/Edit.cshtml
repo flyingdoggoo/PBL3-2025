@@ -1,0 +1,38 @@
+﻿@model PBL3.Models.Flight
+@{
+    ViewData["Title"] = "Chỉnh sửa chuyến bay";
+}
+
+<h4>@ViewData["Title"]: @Model.FlightNumber</h4>
+<hr />
+<div class="row">
+    <div class="col-md-8">
+        <form asp-action="Edit">
+            <input type="hidden" asp-for="FlightId" /> @* Quan trọng cho Edit *@
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            @* Các input fields giống Create.cshtml *@
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label asp-for="FlightNumber" class="control-label"></label>
+                    <input asp-for="FlightNumber" class="form-control" />
+                    <span asp-validation-for="FlightNumber" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Airline" class="control-label"></label>
+                    <input asp-for="Airline" class="form-control" />
+                    <span asp-validation-for="Airline" class="text-danger"></span>
+                </div>
+            </div>
+            @* ... Thêm các fields khác tương tự Create ... *@
+
+            <div class="form-group mt-4">
+                <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+                <a asp-action="Index" class="btn btn-secondary">Quay lại danh sách</a>
+            </div>
+        </form>
+    </div>
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

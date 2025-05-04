@@ -15,7 +15,7 @@
         [StringLength(200)]
         public string Address { get; set; }
 
-        [StringLength(50)]
-        public string Role { get; set; }
+        //[StringLength(50)]
+        //public string Role { get; set; }
     }
 }

@@ -1,0 +1,52 @@
+﻿@model PBL3.Models.Flight
+@{
+    ViewData["Title"] = "Xác nhận xóa chuyến bay";
+}
+
+<h3 class="text-danger">@ViewData["Title"]</h3>
+<hr />
+
+@* Hiển thị TempData Messages hoặc ViewData nếu có lỗi từ POST *@
+@if (!string.IsNullOrEmpty(ViewData["ErrorMessage"] as string))
+{
+    <div class="alert alert-danger">@ViewData["ErrorMessage"]</div>
+}
+else if (ViewData["HasActiveTickets"] as bool? == true)
+{
+    <div class="alert alert-warning">
+        <strong>Cảnh báo:</strong> Chuyến bay này hiện đang có vé được đặt (chưa bị hủy). Không thể xóa.
+    </div>
+}
+else
+{
+    <div class="alert alert-warning">
+        <strong>Bạn có chắc chắn muốn xóa chuyến bay này không? Hành động này không thể hoàn tác.</strong>
+    </div>
+}
+
+
+<div>
+    <h4>Thông tin chuyến bay</h4>
+    <dl class="row">
+        <dt class="col-sm-3">@Html.DisplayNameFor(model => model.FlightNumber)</dt>
+        <dd class="col-sm-9">@Html.DisplayFor(model => model.FlightNumber)</dd>
+        @* Thêm các trường quan trọng khác để xác nhận *@
+        <dt class="col-sm-3">@Html.DisplayNameFor(model => model.Airline)</dt>
+        <dd class="col-sm-9">@Html.DisplayFor(model => model.Airline)</dd>
+        <dt class="col-sm-3">@Html.DisplayNameFor(model => model.StartingTime)</dt>
+        <dd class="col-sm-9">@Model.StartingTime.ToString("dd/MM/yyyy HH:mm")</dd>
+    </dl>
+
+    @if (ViewData["HasActiveTickets"] as bool? != true) // Chỉ hiện nút xóa nếu không có vé active
+    {
+        <form asp-action="Delete">
+            <input type="hidden" asp-for="FlightId" />
+            <button type="submit" class="btn btn-danger">Xác nhận Xóa</button>
+            <a asp-action="Index" class="btn btn-secondary">Hủy</a>
+        </form>
+    }
+    else
+    {
+        <a asp-action="Index" class="btn btn-secondary">Quay lại danh sách</a>
+    }
+</div>

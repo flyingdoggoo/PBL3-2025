@@ -1,0 +1,82 @@
+﻿@model PBL3.Utils.PaginatedList<PBL3.Models.Ticket>
+@{
+    ViewData["Title"] = "Lịch sử Đặt vé";
+}
+
+<h1 class="display-6 mb-3">@ViewData["Title"]</h1>
+@await Html.PartialAsync("_StatusMessagePartial")
+
+@if (!Model.Any())
+{
+    <div class="text-center p-5 border rounded bg-light">
+         <i class="fas fa-ticket-alt fa-3x text-muted mb-3"></i>
+         <p>Bạn chưa đặt vé nào.</p>
+         <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Tìm chuyến bay ngay</a>
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover table-striped align-middle">
+             <thead class="table-light small text-uppercase">
+                <tr>
+                    <th>Mã vé</th>
+                    <th>Chuyến bay</th>
+                    <th>Hành trình</th>
+                    <th>Ngày đi</th>
+                     <th class="text-end">Tổng tiền</th>
+                    <th>Trạng thái</th>
+                    <th></th> @* Cột hành động *@
+                </tr>
+             </thead>
+             <tbody>
+                @foreach (var ticket in Model)
+                {
+                    <tr>
+                        <td>@ticket.TicketId</td>
+                         <td>@ticket.Flight?.FlightNumber (@ticket.Flight?.Airline)</td>
+                         <td>@ticket.Flight?.StartingDestination → @ticket.Flight?.ReachingDestination</td>
+                         <td>@ticket.Flight?.StartingTime.ToString("dd/MM/yyyy")</td>
+                        <td class="text-end">@ticket.Price.ToString("N0")</td>
+                        <td>
+                            @if(ticket.Status == "Booked") { <span class="badge bg-success">Đã đặt</span>}
+                            else if(ticket.Status == "Cancelled") { <span class="badge bg-danger">Đã hủy</span>}
+                            else { <span class="badge bg-secondary">@ticket.Status</span>}
+                        </td>
+                         <td class="text-end">
+                             <a asp-action="Details" asp-route-id="@ticket.TicketId" class="btn btn-sm btn-outline-info" title="Xem chi tiết">
+                                 <i class="fas fa-eye"></i>
+                             </a>
+                             @* Optional: Nút hủy cho khách *@
+                             @* @if(ticket.Status == "Booked" && ticket.Flight?.StartingTime > DateTime.Now.AddHours(24)) // Ví dụ: Chỉ cho hủy trước 24h
+                             {
+                                <a asp-action="Cancel" asp-route-id="@ticket.TicketId" class="btn btn-sm btn-outline-danger ms-1" title="Hủy vé">
+                                     <i class="fas fa-ban"></i>
+                                </a>
+                             } *@
+                        </td>
+                    </tr>
+                }
+             </tbody>
+        </table>
+    </div>
+
+     @* Phân trang *@
+    @* --- XÓA @{ Ở ĐÂY --- *@
+        var prevDisabled = !Model.HasPreviousPage ? "disabled" : "";
+        var nextDisabled = !Model.HasNextPage ? "disabled" : "";
+    @* --- XÓA } Ở ĐÂY --- *@
+    <nav aria-label="Booking history page navigation" class="mt-3">
+         <div class="d-flex justify-content-between align-items-center">
+             <small class="text-muted">Trang @Model.PageIndex / @Model.TotalPages (Tổng số: @Model.TotalCount vé)</small>
+             <ul class="pagination pagination-sm mb-0">
+                <li class="page-item @prevDisabled"> @* Sử dụng biến đã định nghĩa *@
+                  <a class="page-link" asp-action="Index" asp-route-pageNumber="@(Model.PageIndex - 1)">Trước</a>
+                </li>
+                <li class="page-item @nextDisabled"> @* Sử dụng biến đã định nghĩa *@
+                  <a class="page-link" asp-action="Index" asp-route-pageNumber="@(Model.PageIndex + 1)">Sau</a>
+                </li>
+              </ul>
+          </div>
+    </nav>
+} @* Đóng khối else *@

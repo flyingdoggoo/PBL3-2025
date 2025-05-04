@@ -1,0 +1,81 @@
+﻿@model PBL3.Models.Flight
+@{
+    ViewData["Title"] = "Thêm chuyến bay mới";
+}
+
+<h4>@ViewData["Title"]</h4>
+<hr />
+<div class="row">
+    <div class="col-md-8">
+        <form asp-action="Create">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label asp-for="FlightNumber" class="control-label"></label>
+                    <input asp-for="FlightNumber" class="form-control" />
+                    <span asp-validation-for="FlightNumber" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Airline" class="control-label"></label>
+                    <input asp-for="Airline" class="form-control" />
+                    <span asp-validation-for="Airline" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label asp-for="StartingDestination" class="control-label"></label>
+                    <input asp-for="StartingDestination" class="form-control" />
+                    <span asp-validation-for="StartingDestination" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="ReachingDestination" class="control-label"></label>
+                    <input asp-for="ReachingDestination" class="form-control" />
+                    <span asp-validation-for="ReachingDestination" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label asp-for="StartingTime" class="control-label"></label>
+                    <input asp-for="StartingTime" type="datetime-local" class="form-control" />
+                    <span asp-validation-for="StartingTime" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="ReachingTime" class="control-label"></label>
+                    <input asp-for="ReachingTime" type="datetime-local" class="form-control" />
+                    <span asp-validation-for="ReachingTime" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label asp-for="Capacity" class="control-label"></label>
+                    <input asp-for="Capacity" type="number" class="form-control" />
+                    <span asp-validation-for="Capacity" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="AvailableSeats" class="control-label"></label>
+                    <input asp-for="AvailableSeats" type="number" class="form-control" />
+                    <span asp-validation-for="AvailableSeats" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Price" class="control-label"></label>
+                    <input asp-for="Price" type="number" step="1000" class="form-control" /> @* step tùy chỉnh *@
+                    <span asp-validation-for="Price" class="text-danger"></span>
+                </div>
+            </div>
+
+
+            <div class="form-group mt-4">
+                <button type="submit" class="btn btn-primary">Tạo mới</button>
+                <a asp-action="Index" class="btn btn-secondary">Quay lại danh sách</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

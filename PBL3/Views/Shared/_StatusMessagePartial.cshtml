@@ -1,0 +1,36 @@
+﻿@* File: Views/Shared/_StatusMessagePartial.cshtml *@
+@if (!string.IsNullOrEmpty(TempData["SuccessMessage"] as string))
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle me-2"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    TempData.Remove("SuccessMessage"); @* Xóa sau khi hiển thị *@
+}
+
+@if (!string.IsNullOrEmpty(TempData["ErrorMessage"] as string))
+{
+     <div class="alert alert-danger alert-dismissible fade show" role="alert">
+         <i class="fas fa-exclamation-triangle me-2"></i> @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+      TempData.Remove("ErrorMessage");
+}
+
+ @if (!string.IsNullOrEmpty(TempData["InfoMessage"] as string))
+{
+     <div class="alert alert-info alert-dismissible fade show" role="alert">
+        <i class="fas fa-info-circle me-2"></i> @TempData["InfoMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+     TempData.Remove("InfoMessage");
+}
+
+ @if (!string.IsNullOrEmpty(TempData["WarningMessage"] as string))
+{
+     <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle me-2"></i> @TempData["WarningMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+     TempData.Remove("WarningMessage");
+}

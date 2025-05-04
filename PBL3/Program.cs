@@ -8,8 +8,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 
-var connectionString = builder.Configuration.GetConnectionString("KienConnection");
-
+//var connectionString = builder.Configuration.GetConnectionString("KienConnection");
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
@@ -59,7 +59,21 @@ app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
-
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        // Gọi hàm seed tĩnh của bạn
+        await IdentityDataInitializer.SeedRolesAndAdminUserAsync(services);
+        // Gọi các hàm seed khác nếu có (vd: seed dữ liệu chuyến bay mẫu)
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred seeding the DB.");
+    }
+}
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");

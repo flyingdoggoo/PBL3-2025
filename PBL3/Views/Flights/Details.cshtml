@@ -1,0 +1,49 @@
+﻿@model PBL3.Models.Flight
+@{ ViewData["Title"] = "Chi tiết chuyến bay"; }
+
+<h4>@ViewData["Title"]: @Model.FlightNumber</h4>
+<hr />
+ <div>
+    <dl class="row">
+        <dt class="col-sm-3">@Html.DisplayNameFor(model => model.FlightNumber)</dt>
+        <dd class="col-sm-9">@Html.DisplayFor(model => model.FlightNumber)</dd>
+        @* Thêm các trường khác *@
+        <dt class="col-sm-3">@Html.DisplayNameFor(model => model.Airline)</dt>
+        <dd class="col-sm-9">@Html.DisplayFor(model => model.Airline)</dd>
+         <dt class="col-sm-3">@Html.DisplayNameFor(model => model.StartingDestination)</dt>
+        <dd class="col-sm-9">@Html.DisplayFor(model => model.StartingDestination)</dd>
+         <dt class="col-sm-3">@Html.DisplayNameFor(model => model.ReachingDestination)</dt>
+        <dd class="col-sm-9">@Html.DisplayFor(model => model.ReachingDestination)</dd>
+         <dt class="col-sm-3">@Html.DisplayNameFor(model => model.StartingTime)</dt>
+        <dd class="col-sm-9">@Model.StartingTime.ToString("dd/MM/yyyy HH:mm")</dd>
+         <dt class="col-sm-3">@Html.DisplayNameFor(model => model.ReachingTime)</dt>
+        <dd class="col-sm-9">@Model.ReachingTime.ToString("dd/MM/yyyy HH:mm")</dd>
+         <dt class="col-sm-3">@Html.DisplayNameFor(model => model.Capacity)</dt>
+        <dd class="col-sm-9">@Html.DisplayFor(model => model.Capacity)</dd>
+         <dt class="col-sm-3">@Html.DisplayNameFor(model => model.AvailableSeats)</dt>
+        <dd class="col-sm-9">@Html.DisplayFor(model => model.AvailableSeats)</dd>
+         <dt class="col-sm-3">@Html.DisplayNameFor(model => model.Price)</dt>
+        <dd class="col-sm-9">@Model.Price.ToString("N0") VNĐ</dd>
+
+        @* Hiển thị Sections nếu cần *@
+        @if (Model.Sections != null && Model.Sections.Any())
+        {
+            <dt class="col-sm-3">Khu vực (Sections)</dt>
+            <dd class="col-sm-9">
+                <ul>
+                    @* SỬA LỖI Ở ĐÂY: Dùng cú pháp @(biểu_thức) *@
+                    @foreach (var section in Model.Sections)
+                    {
+                        <li>@(section.SectionName) (Sức chứa: @(section.Capacity))</li>
+                        @*   ^------------------^                ^----------------^   *@
+                    }
+                </ul>
+            </dd>
+        }
+
+    </dl>
+</div>
+<div class="mt-3">
+    <a asp-action="Edit" asp-route-id="@Model.FlightId" class="btn btn-primary">Chỉnh sửa</a>
+    <a asp-action="Index" class="btn btn-secondary">Quay lại danh sách</a>
+</div>

@@ -1,0 +1,37 @@
+﻿@model PBL3.Models.AppUser
+@{
+    ViewData["Title"] = "Xác nhận xóa Nhân viên";
+}
+
+<h3 class="text-danger">@ViewData["Title"]</h3>
+<hr />
+
+@await Html.PartialAsync("_StatusMessagePartial")
+
+@* Thêm cảnh báo nếu có dữ liệu liên quan *@
+@*@if (ViewData["HasRelatedData"] as bool? == true)
+{
+    <div class="alert alert-warning"><strong>Cảnh báo:</strong> Nhân viên này có dữ liệu liên quan (ví dụ: vé đã xử lý). Việc xóa có thể không được phép hoặc cần cân nhắc.</div>
+} else*@
+{
+<div class="alert alert-warning">
+    <strong>Bạn có chắc chắn muốn xóa tài khoản nhân viên này không?</strong>
+</div>
+}
+
+
+<div>
+    <h4>Thông tin Nhân viên</h4>
+    <dl class="row">
+        <dt class="col-sm-3">Họ và tên</dt>
+        <dd class="col-sm-9">@Html.DisplayFor(model => model.FullName)</dd>
+        <dt class="col-sm-3">Email</dt>
+        <dd class="col-sm-9">@Html.DisplayFor(model => model.Email)</dd>
+    </dl>
+
+    <form asp-action="Delete">
+        <input type="hidden" asp-for="Id" />
+        <button type="submit" class="btn btn-danger">Xác nhận Xóa</button>
+        <a asp-action="Index" class="btn btn-secondary">Hủy</a>
+    </form>
+</div>

@@ -243,11 +243,6 @@ namespace PBL3.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
 
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
 
@@ -280,24 +275,21 @@ namespace PBL3.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("FlightId"));
-
                     b.Property<int>("BasePrice")
                         .HasColumnType("int");
 
                     b.Property<int>("Capacity")
                         .HasColumnType("int");
 
-                    b.Property<int>("Distance")
+                    b.Property<int>("Capacity")
                         .HasColumnType("int");
 
                     b.Property<string>("FlightNumber")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
-
                     b.Property<int>("ReachingDestination")
                         .HasColumnType("int");
-
                     b.Property<DateTime>("ReachingTime")
                         .HasColumnType("datetime2");
 

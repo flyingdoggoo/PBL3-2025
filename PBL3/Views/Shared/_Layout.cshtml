@@ -32,6 +32,13 @@
                                 <a class="nav-link text-dark" asp-controller="Account" asp-action="Profile">Thông tin cá nhân</a>
                             </li>
                         }
+                        @* --- THÊM LINK LỊCH SỬ ĐẶT VÉ --- *@
+                        @if (!User.IsInRole("Admin") && !User.IsInRole("Employee")) // Chỉ hiện cho Passenger
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="BookingHistory" asp-action="Index">Lịch sử đặt vé</a>
+                            </li>
+                        }
                     </ul>
                     <ul class="navbar-nav">
                         @if (User.Identity.IsAuthenticated)

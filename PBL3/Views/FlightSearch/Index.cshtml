@@ -1,0 +1,77 @@
+﻿@model IEnumerable<PBL3.Models.Flight>
+@{
+    ViewData["Title"] = "Kết quả Tìm kiếm Chuyến bay";
+    var searchCriteria = ViewData["SearchCriteria"] as PBL3.Models.ViewModels.FlightSearchViewModel;
+}
+
+<h1 class="display-6 mb-3">@ViewData["Title"]</h1>
+@await Html.PartialAsync("_StatusMessagePartial")
+
+@* Hiển thị lại tiêu chí tìm kiếm *@
+@if (searchCriteria != null)
+{
+    <div class="alert alert-secondary small">
+        Đã tìm thấy <strong>@Model.Count()</strong> chuyến bay từ
+        <strong>@searchCriteria.DepartureCity</strong> đến <strong>@searchCriteria.ArrivalCity</strong>
+        vào ngày <strong>@searchCriteria.DepartureDate.ToString("dd/MM/yyyy")</strong>.
+        <a asp-controller="Home" asp-action="Index" class="ms-2">Tìm kiếm lại?</a>
+    </div>
+}
+
+@if (!Model.Any())
+{
+    <div class="text-center p-5 border rounded bg-light">
+        <i class="fas fa-plane-slash fa-3x text-muted mb-3"></i>
+        <p>Không tìm thấy chuyến bay nào phù hợp với yêu cầu của bạn.</p>
+        <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Thử tìm kiếm lại</a>
+    </div>
+}
+else
+{
+    <div class="row row-cols-1 g-3">
+        @* Hiển thị dạng card *@
+        @foreach (var flight in Model)
+        {
+            <div class="col">
+                <div class="card shadow-sm flight-result-card">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-2 text-center">
+                                <i class="fas fa-plane-departure fa-2x text-primary mb-2 d-block"></i> @* Icon hãng bay/mặc định *@
+                                <strong class="d-block">@flight.Airline</strong>
+                                <small class="text-muted d-block">@flight.FlightNumber</small>
+                            </div>
+                            <div class="col-md-7">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div>
+                                        <span class="fs-5 fw-bold">@flight.StartingTime.ToString("HH:mm")</span>
+                                        <small class="d-block text-muted">@flight.StartingDestination</small>
+                                    </div>
+                                    <div class="text-center mx-2">
+                                        <i class="fas fa-long-arrow-alt-right text-muted"></i>
+                                        <small class="d-block text-muted">@((flight.ReachingTime - flight.StartingTime).ToString(@"hh\h\:mm\m"))</small> @* Thời gian bay *@
+                                    </div>
+                                    <div>
+                                        <span class="fs-5 fw-bold">@flight.ReachingTime.ToString("HH:mm")</span>
+                                        <small class="d-block text-muted">@flight.ReachingDestination</small>
+                                    </div>
+                                </div>
+                                <small class="text-muted">Ngày: @flight.StartingTime.ToString("dd/MM/yyyy")</small>
+                                <span class="badge bg-light text-dark ms-2">Còn @flight.AvailableSeats ghế</span>
+                            </div>
+                            <div class="col-md-3 text-end">
+                                <span class="fs-5 fw-bold text-danger">@flight.Price.ToString("N0") <small>VNĐ</small></span>
+                                <small class="d-block text-muted">/khách (từ)</small>
+                                <div class="d-grid gap-2 mt-2">
+                                    @* Nút chiếm hết chiều rộng *@
+                                    <a asp-controller="Booking" asp-action="SelectFlight" asp-route-flightId="@flight.FlightId" class="btn btn-warning btn-sm fw-bold">Chọn chuyến</a>
+                                    <a asp-controller="FlightSearch" asp-action="Details" asp-route-id="@flight.FlightId" class="btn btn-outline-secondary btn-sm">Xem chi tiết</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}

@@ -1,0 +1,81 @@
+﻿@{
+    ViewData["Title"] = "Xác nhận Thông tin Đặt vé";
+    var flight = ViewData["Flight"] as Flight;
+    var passenger = ViewData["Passenger"] as AppUser;
+}
+
+<h1 class="display-6 mb-3">@ViewData["Title"]</h1>
+<p class="lead">Vui lòng kiểm tra lại thông tin chuyến bay và hành khách trước khi xác nhận đặt vé.</p>
+<hr />
+@await Html.PartialAsync("_StatusMessagePartial")
+
+@if (flight != null && passenger != null)
+{
+    <div class="row">
+        <div class="col-md-7">
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-primary text-white"><i class="fas fa-plane-departure me-2"></i>Thông tin chuyến bay</div>
+                <div class="card-body">
+                    <dl class="row small">
+                        <dt class="col-sm-4">Số hiệu:</dt>
+                        <dd class="col-sm-8">@flight.FlightNumber</dd>
+                        <dt class="col-sm-4">Hãng bay:</dt>
+                        <dd class="col-sm-8">@flight.Airline</dd>
+                        <dt class="col-sm-4">Điểm đi:</dt>
+                        <dd class="col-sm-8">@flight.StartingDestination</dd>
+                        <dt class="col-sm-4">Điểm đến:</dt>
+                        <dd class="col-sm-8">@flight.ReachingDestination</dd>
+                        <dt class="col-sm-4">Khởi hành:</dt>
+                        <dd class="col-sm-8">@flight.StartingTime.ToString("HH:mm, dd/MM/yyyy")</dd>
+                        <dt class="col-sm-4">Đến nơi:</dt>
+                        <dd class="col-sm-8">@flight.ReachingTime.ToString("HH:mm, dd/MM/yyyy")</dd>
+                        <dt class="col-sm-4">Giá vé (tạm tính):</dt>
+                        <dd class="col-sm-8 fw-bold">@flight.Price.ToString("N0") VNĐ</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-5">
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-success text-white"><i class="fas fa-user me-2"></i>Thông tin hành khách</div>
+                <div class="card-body">
+                    <dl class="row small">
+                        <dt class="col-sm-4">Họ tên:</dt>
+                        <dd class="col-sm-8">@passenger.FullName</dd>
+                        <dt class="col-sm-4">Email:</dt>
+                        <dd class="col-sm-8">@passenger.Email</dd>
+                        <dt class="col-sm-4">Tuổi:</dt>
+                        <dd class="col-sm-8">@passenger.Age</dd>
+                        <dt class="col-sm-4">Địa chỉ:</dt>
+                        <dd class="col-sm-8">@passenger.Address</dd>
+                    </dl>
+                    <small class="text-muted">Thông tin này được lấy từ hồ sơ của bạn. <a asp-controller="Account" asp-action="Profile">Chỉnh sửa?</a></small>
+                </div>
+            </div>
+            <div class="card shadow-sm mb-3 border-danger">
+                <div class="card-header bg-danger text-white"><i class="fas fa-money-check-alt me-2"></i>Xác nhận & Thanh toán</div>
+                <div class="card-body">
+                    <p>Tổng tiền (tạm tính): <strong class="fs-5 text-danger">@flight.Price.ToString("N0") VNĐ</strong></p>
+                    <p class="small text-muted">Giá cuối cùng có thể bao gồm thuế và phí. Thanh toán sẽ được xử lý ở bước tiếp theo (chức năng đang phát triển).</p>
+                    <form asp-action="ConfirmBooking" method="post">
+                        @Html.AntiForgeryToken() @* Chống CSRF *@
+                        <input type="hidden" name="flightId" value="@flight.FlightId" />
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-danger fw-bold">
+                                <i class="fas fa-check-circle me-1"></i> Xác nhận Đặt vé
+                            </button>
+                        </div>
+                    </form>
+                    <a asp-controller="FlightSearch" asp-action="Details" asp-route-id="@flight.FlightId" class="btn btn-outline-secondary btn-sm mt-2 w-100">
+                        <i class="fas fa-arrow-left me-1"></i> Quay lại chi tiết chuyến bay
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="alert alert-danger">Không thể tải thông tin chuyến bay hoặc hành khách.</div>
+    <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Về trang chủ</a>
+}

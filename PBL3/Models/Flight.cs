@@ -1,4 +1,4 @@
-﻿using static System.Collections.Specialized.BitVector32;
+﻿// Flight.cs (Phần bổ sung/sửa đổi)
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
@@ -8,21 +8,25 @@ namespace PBL3.Models
     public class Flight
     {
         [Key]
-        public int FlightId { get; set; } // Đổi từ String sang int
+        public int FlightId { get; set; }
 
+        [Required(ErrorMessage = "Vui lòng nhập sức chứa.")]
+        [Range(1, 1000, ErrorMessage = "Sức chứa phải từ 1 đến 1000.")]
+        [Display(Name = "Tổng số ghế (Sức chứa)")]
+        public int Capacity { get; set; } // Đây là tổng số ghế
 
-        [Required]
-        [StringLength(20, ErrorMessage = "Số hiệu chuyến bay là bắt buộc và không quá 20 ký tự.")]
-        public string FlightNumber { get; set; } // Thêm tên rõ ràng hơn (ví dụ: 'VN123')
+        [Required(ErrorMessage = "Vui lòng nhập thời gian khởi hành.")]
+        [Display(Name = "Thời gian khởi hành")]
+        public DateTime StartingTime { get; set; }
 
-        [Range(1, 1000)]
-        public int Capacity { get; set; } // Tổng sức chứa (có thể tính từ các Section)
+        [Required(ErrorMessage = "Vui lòng nhập thời gian đến.")]
+        [Display(Name = "Thời gian đến")]
+        public DateTime ReachingTime { get; set; }
 
-        [Required]
-        public DateTime StartingTime { get; set; } // Thời gian khởi hành
-
-        [Required]
-        public DateTime ReachingTime { get; set; } // Thời gian đến nơi
+        [Required(ErrorMessage = "Vui lòng nhập điểm đi.")]
+        [StringLength(100)]
+        [Display(Name = "Điểm đi")]
+        public string StartingDestination { get; set; }
 
         [ForeignKey("DepartureAirport")]
         public int StartingDestination { get; set; }
@@ -42,10 +46,12 @@ namespace PBL3.Models
         public int BasePrice { get; set; }
         // --- Thuộc tính điều hướng (Navigation Properties) ---
 
-        // Một chuyến bay có nhiều khu vực chỗ ngồi (Mối quan hệ một-nhiều)
-        public virtual ICollection<Section> Sections { get; set; } = new List<Section>();
+        // Thuộc tính Distance có thể giữ hoặc bỏ nếu không dùng
+        // [Range(0, int.MaxValue)]
+        // public int Distance { get; set; }
 
-        // Một chuyến bay liên quan đến nhiều vé (Mối quan hệ một-nhiều)
+        // --- Thuộc tính điều hướng ---
+        public virtual ICollection<Section> Sections { get; set; } = new List<Section>();
         public virtual ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
     }
 }

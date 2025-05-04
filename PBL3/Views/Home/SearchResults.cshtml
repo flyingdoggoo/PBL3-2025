@@ -1,4 +1,4 @@
-﻿@model PBL3.Models.FlightSearchViewModel
+﻿@model PBL3.Models.ViewModels.FlightSearchViewModel
 @{
     ViewData["Title"] = "Kết quả tìm kiếm";
 
@@ -82,7 +82,7 @@
                                             @($"{duration.Hours}h {duration.Minutes}m")
                                         }
                                     </td>
-                                    <td>@flight.BasePrice.ToString("N0") VND</td>
+                                    <td>@flight.Price.ToString("N0") VND</td>
                                     <td>
                                         <a href="#" class="btn btn-primary btn-sm">Chọn</a>
                                     </td>
@@ -144,7 +144,7 @@
                                                 @($"{duration.Hours}h {duration.Minutes}m")
                                             }
                                         </td>
-                                        <td>@flight.BasePrice.ToString("N0") VND</td>
+                                        <td>@flight.Price.ToString("N0") VND</td>
                                         <td>
                                             <a href="#" class="btn btn-primary btn-sm">Chọn</a>
                                         </td>

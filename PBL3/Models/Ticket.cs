@@ -1,6 +1,6 @@
-﻿// Ticket.cs (Phần xác nhận)
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PBL3.Models
 {
@@ -9,48 +9,45 @@ namespace PBL3.Models
         [Key]
         public int TicketId { get; set; }
 
-        // --- Khóa ngoại ---
-        [Required]
-        public string PassengerId { get; set; } // Khóa ngoại string, non-nullable
+        [Required(ErrorMessage = "Vé phải thuộc về một hành khách.")]
+        public string PassengerId { get; set; } // FK đến AppUser.Id (string)
 
-        [Required]
-        public int FlightId { get; set; }
+        [Required(ErrorMessage = "Vé phải thuộc về một chuyến bay.")]
+        public int FlightId { get; set; } // FK đến Flight.FlightId (int)
 
-        public int? SectionId { get; set; }
+        public int? SectionId { get; set; } // FK đến Section.Id (int), nullable
+        public string? BookingEmployeeId { get; set; } // FK đến AppUser.Id (string), nullable
 
-        public string? BookingEmployeeId { get; set; } // Khóa ngoại string, nullable
-
-        // --- Thuộc tính thông thường ---
-        [Required]
+        [Required(ErrorMessage = "Vui lòng nhập giá vé.")]
         [Column(TypeName = "decimal(18,2)")]
-        [Range(0.01, (double)decimal.MaxValue, ErrorMessage = "Giá vé phải lớn hơn 0.")]
+        [Range(0.01, (double)decimal.MaxValue)]
         [Display(Name = "Giá vé thực trả")]
-        public decimal Price { get; set; } // Giá vé cuối cùng
+        public decimal Price { get; set; }
 
         [StringLength(10)]
         [Display(Name = "Số ghế")]
-        public string SeatNumber { get; set; }
+        public string? SeatNumber { get; set; } // Cho phép null
 
         [Required]
         [Display(Name = "Thời gian đặt")]
-        public DateTime OrderTime { get; set; }
+        public DateTime OrderTime { get; set; } = DateTime.UtcNow; // Giá trị mặc định
 
-        [Required]
+        [Required(ErrorMessage = "Trạng thái vé là bắt buộc.")]
         [StringLength(20)]
         [Display(Name = "Trạng thái")]
-        public string Status { get; set; } = "Booked";
+        public string Status { get; set; } = "Booked"; // Giá trị mặc định
 
-        // --- Thuộc tính điều hướng ---
+        // --- Navigation Properties ---
         [ForeignKey("PassengerId")]
-        public virtual Passenger Passenger { get; set; }
+        public virtual Passenger? Passenger { get; set; } // Nên là Passenger thay vì AppUser
 
         [ForeignKey("FlightId")]
-        public virtual Flight Flight { get; set; }
+        public virtual Flight? Flight { get; set; }
 
         [ForeignKey("SectionId")]
-        public virtual Section? Section { get; set; } // Cho phép null
+        public virtual Section? Section { get; set; }
 
         [ForeignKey("BookingEmployeeId")]
-        public virtual Employee? BookingEmployee { get; set; } // Cho phép null
+        public virtual Employee? BookingEmployee { get; set; }
     }
 }

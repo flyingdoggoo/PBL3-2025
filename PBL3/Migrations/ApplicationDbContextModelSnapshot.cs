@@ -197,7 +197,6 @@ namespace PBL3.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("Address")
-                        .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
@@ -207,6 +206,11 @@ namespace PBL3.Migrations
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Discriminator")
+                        .IsRequired()
+                        .HasMaxLength(13)
+                        .HasColumnType("nvarchar(13)");
 
                     b.Property<string>("Email")
                         .HasMaxLength(256)
@@ -265,7 +269,9 @@ namespace PBL3.Migrations
 
                     b.ToTable("AspNetUsers", (string)null);
 
-                    b.UseTptMappingStrategy();
+                    b.HasDiscriminator().HasValue("AppUser");
+
+                    b.UseTphMappingStrategy();
                 });
 
             modelBuilder.Entity("PBL3.Models.Flight", b =>
@@ -275,21 +281,32 @@ namespace PBL3.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("FlightId"));
-                    b.Property<int>("BasePrice")
+
+                    b.Property<string>("Airline")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("AvailableSeats")
                         .HasColumnType("int");
 
                     b.Property<int>("Capacity")
                         .HasColumnType("int");
 
-                    b.Property<int>("Capacity")
+                    b.Property<int>("Distance")
                         .HasColumnType("int");
 
                     b.Property<string>("FlightNumber")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<int>("ReachingDestination")
                         .HasColumnType("int");
+
                     b.Property<DateTime>("ReachingTime")
                         .HasColumnType("datetime2");
 
@@ -331,7 +348,7 @@ namespace PBL3.Migrations
 
                     b.HasIndex("FlightId");
 
-                    b.ToTable("Section");
+                    b.ToTable("Sections");
                 });
 
             modelBuilder.Entity("PBL3.Models.Ticket", b =>
@@ -359,7 +376,6 @@ namespace PBL3.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("SeatNumber")
-                        .IsRequired()
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
 
@@ -391,7 +407,7 @@ namespace PBL3.Migrations
                     b.Property<DateTime>("AddedDate")
                         .HasColumnType("datetime2");
 
-                    b.ToTable("Employees", (string)null);
+                    b.HasDiscriminator().HasValue("Employee");
                 });
 
             modelBuilder.Entity("PBL3.Models.Passenger", b =>
@@ -399,18 +415,10 @@ namespace PBL3.Migrations
                     b.HasBaseType("PBL3.Models.AppUser");
 
                     b.Property<string>("PassportNumber")
-                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.ToTable("Passengers", (string)null);
-                });
-
-            modelBuilder.Entity("PBL3.Models.SystemManager", b =>
-                {
-                    b.HasBaseType("PBL3.Models.Employee");
-
-                    b.ToTable("SystemManagers", (string)null);
+                    b.HasDiscriminator().HasValue("Passenger");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -469,13 +477,13 @@ namespace PBL3.Migrations
                     b.HasOne("PBL3.Models.Airport", "ArrivalAirport")
                         .WithMany()
                         .HasForeignKey("ReachingDestination")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("PBL3.Models.Airport", "DepartureAirport")
                         .WithMany()
                         .HasForeignKey("StartingDestination")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("ArrivalAirport");
@@ -523,33 +531,6 @@ namespace PBL3.Migrations
                     b.Navigation("Passenger");
 
                     b.Navigation("Section");
-                });
-
-            modelBuilder.Entity("PBL3.Models.Employee", b =>
-                {
-                    b.HasOne("PBL3.Models.AppUser", null)
-                        .WithOne()
-                        .HasForeignKey("PBL3.Models.Employee", "Id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("PBL3.Models.Passenger", b =>
-                {
-                    b.HasOne("PBL3.Models.AppUser", null)
-                        .WithOne()
-                        .HasForeignKey("PBL3.Models.Passenger", "Id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("PBL3.Models.SystemManager", b =>
-                {
-                    b.HasOne("PBL3.Models.Employee", null)
-                        .WithOne()
-                        .HasForeignKey("PBL3.Models.SystemManager", "Id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("PBL3.Models.Flight", b =>

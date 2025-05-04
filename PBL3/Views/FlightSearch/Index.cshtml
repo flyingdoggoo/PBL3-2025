@@ -12,7 +12,9 @@
 {
     <div class="alert alert-secondary small">
         Đã tìm thấy <strong>@Model.Count()</strong> chuyến bay từ
-        <strong>@searchCriteria.DepartureCity</strong> đến <strong>@searchCriteria.ArrivalCity</strong>
+        @* --- SỬA Ở ĐÂY: Tìm Text trong list Airports dựa trên ID --- *@
+        <strong>@(searchCriteria.Airports.FirstOrDefault(a => a.Value == searchCriteria.DepartureAirportId.ToString())?.Text ?? "Không rõ")</strong> đến
+        <strong>@(searchCriteria.Airports.FirstOrDefault(a => a.Value == searchCriteria.ArrivalAirportId.ToString())?.Text ?? "Không rõ")</strong>
         vào ngày <strong>@searchCriteria.DepartureDate.ToString("dd/MM/yyyy")</strong>.
         <a asp-controller="Home" asp-action="Index" class="ms-2">Tìm kiếm lại?</a>
     </div>

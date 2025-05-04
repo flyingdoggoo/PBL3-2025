@@ -25,15 +25,21 @@ public class FlightsController : Controller
         ViewData["PriceSortParm"] = sortOrder == "Price" ? "price_desc" : "Price";
         ViewData["CurrentFilter"] = searchString;
 
-        var flights = from f in _context.Flights
-                      select f;
+        var flights = _context.Flights
+                          .Include(f => f.DepartureAirport) // *** THÊM INCLUDE ***
+                          .Include(f => f.ArrivalAirport)   // *** THÊM INCLUDE ***
+                          .AsQueryable();
 
         if (!String.IsNullOrEmpty(searchString))
         {
-            flights = flights.Where(f => f.FlightNumber.Contains(searchString)
-                                       || f.StartingDestination.Contains(searchString)
-                                       || f.ReachingDestination.Contains(searchString)
-                                       || f.Airline.Contains(searchString));
+            flights = flights.Where(f =>
+            f.FlightNumber.Contains(searchString) || // Tìm theo số hiệu
+            f.Airline.Contains(searchString) ||      // Tìm theo hãng
+            (f.DepartureAirport != null &&           // Tìm theo tên/mã sân bay đi (kiểm tra null)
+                (f.DepartureAirport.City.Contains(searchString) || f.DepartureAirport.Code.Contains(searchString))) ||
+            (f.ArrivalAirport != null &&             // Tìm theo tên/mã sân bay đến (kiểm tra null)
+                (f.ArrivalAirport.City.Contains(searchString) || f.ArrivalAirport.Code.Contains(searchString)))
+        );
         }
 
         switch (sortOrder)

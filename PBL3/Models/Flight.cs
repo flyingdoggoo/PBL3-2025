@@ -1,7 +1,7 @@
-﻿// Flight.cs (Phần bổ sung/sửa đổi)
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace PBL3.Models
 {
@@ -10,10 +10,18 @@ namespace PBL3.Models
         [Key]
         public int FlightId { get; set; }
 
-        [Required(ErrorMessage = "Vui lòng nhập sức chứa.")]
-        [Range(1, 1000, ErrorMessage = "Sức chứa phải từ 1 đến 1000.")]
-        [Display(Name = "Tổng số ghế (Sức chứa)")]
-        public int Capacity { get; set; } // Đây là tổng số ghế
+        [Required(ErrorMessage = "Vui lòng nhập số hiệu chuyến bay.")]
+        [StringLength(20, ErrorMessage = "Số hiệu chuyến bay không quá 20 ký tự.")]
+        [Display(Name = "Số hiệu chuyến bay")]
+        public string FlightNumber { get; set; }
+
+        [Required(ErrorMessage = "Vui lòng nhập sân bay đi.")]
+        [Display(Name = "Sân bay đi")]
+        public int StartingDestination { get; set; } // FK đến Airport.Id
+
+        [Required(ErrorMessage = "Vui lòng nhập sân bay đến.")]
+        [Display(Name = "Sân bay đến")]
+        public int ReachingDestination { get; set; } // FK đến Airport.Id
 
         [Required(ErrorMessage = "Vui lòng nhập thời gian khởi hành.")]
         [Display(Name = "Thời gian khởi hành")]
@@ -23,34 +31,37 @@ namespace PBL3.Models
         [Display(Name = "Thời gian đến")]
         public DateTime ReachingTime { get; set; }
 
-        [Required(ErrorMessage = "Vui lòng nhập điểm đi.")]
+        [Required(ErrorMessage = "Vui lòng nhập sức chứa.")]
+        [Range(1, 1000, ErrorMessage = "Sức chứa phải từ 1 đến 1000.")]
+        [Display(Name = "Tổng số ghế")]
+        public int Capacity { get; set; }
+
+        [Required(ErrorMessage = "Vui lòng nhập giá vé cơ bản.")]
+        [Column(TypeName = "decimal(18, 2)")]
+        [Range(0.01, (double)decimal.MaxValue, ErrorMessage = "Giá vé phải lớn hơn 0.")]
+        [Display(Name = "Giá vé (từ)")]
+        public decimal Price { get; set; } // Giá cơ sở
+
+        [Required(ErrorMessage = "Vui lòng nhập hãng bay.")]
         [StringLength(100)]
-        [Display(Name = "Điểm đi")]
-        public string StartingDestination { get; set; }
+        [Display(Name = "Hãng bay")]
+        public string Airline { get; set; }
 
-        [ForeignKey("DepartureAirport")]
-        public int StartingDestination { get; set; }
+        [Required(ErrorMessage = "Vui lòng nhập số ghế còn trống.")]
+        [Range(0, 1000, ErrorMessage = "Số ghế trống phải từ 0.")] // Nên <= Capacity
+        [Display(Name = "Số ghế còn trống")]
+        public int AvailableSeats { get; set; }
 
-        [DeleteBehavior(DeleteBehavior.NoAction)]
-        public virtual Airport DepartureAirport { get; set; }
+        [Display(Name = "Khoảng cách (km)")]
+        public int Distance { get; set; }
 
-        [ForeignKey("ArrivalAirport")]
-        public int ReachingDestination { get; set; }
+        // --- Navigation Properties ---
+        [ForeignKey("StartingDestination")]
+        public virtual Airport? DepartureAirport { get; set; }
 
-        [DeleteBehavior(DeleteBehavior.NoAction)]
-        public virtual Airport ArrivalAirport { get; set; }
+        [ForeignKey("ReachingDestination")]
+        public virtual Airport? ArrivalAirport { get; set; }
 
-        [Range(0, int.MaxValue)]
-        public int Distance { get; set; } 
-
-        public int BasePrice { get; set; }
-        // --- Thuộc tính điều hướng (Navigation Properties) ---
-
-        // Thuộc tính Distance có thể giữ hoặc bỏ nếu không dùng
-        // [Range(0, int.MaxValue)]
-        // public int Distance { get; set; }
-
-        // --- Thuộc tính điều hướng ---
         public virtual ICollection<Section> Sections { get; set; } = new List<Section>();
         public virtual ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
     }

@@ -1,4 +1,4 @@
-namespace PBL3.Models
+namespace PBL3.Models.ViewModels
 {
     public class ErrorViewModel
     {

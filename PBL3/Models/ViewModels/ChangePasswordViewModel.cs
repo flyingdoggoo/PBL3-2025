@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace PBL3.Models
+namespace PBL3.Models.ViewModels
 {
     public class ChangePasswordViewModel
     {
@@ -13,6 +13,7 @@ namespace PBL3.Models
         [DataType(DataType.Password)]
         public string NewPassword { get; set; }
 
+        [Required(ErrorMessage = "Vui lòng xác nhận mật khẩu")]
         [DataType(DataType.Password)]
         [Compare("NewPassword", ErrorMessage = "Mật khẩu mới và xác nhận mật khẩu không khớp.")]
         public string ConfirmPassword { get; set; }

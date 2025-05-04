@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using PBL3.Data;
 using PBL3.Models;
+using PBL3.Models.ViewModels;
 
 namespace PBL3.Controllers
 {

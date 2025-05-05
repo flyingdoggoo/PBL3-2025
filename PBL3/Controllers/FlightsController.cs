@@ -1,24 +1,52 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using PBL3.Data; // Namespace chứa DbContext
+using PBL3.Data;
 using PBL3.Models;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using System.Linq;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using System.Collections.Generic;
+using PBL3.Models.ViewModels; // **THÊM USING VIEWMODEL**
+using System; // Thêm cho DateTime, Math
 
-[Authorize(Roles = "Admin,Employee")] // Admin và Employee có thể quản lý chuyến bay
+[Authorize(Roles = "Admin,Employee")]
 public class FlightsController : Controller
 {
     private readonly ApplicationDbContext _context;
+
+    // Danh sách hãng bay (có thể chuyển ra ngoài nếu muốn tái sử dụng nhiều nơi)
+    private static readonly List<(string Prefix, string Name)> AirlinesInfo = new List<(string, string)>
+    {
+        ("VN", "Vietnam Airlines"), ("VJ", "Vietjet Air"), ("QH", "Bamboo Airways"),
+        ("BL", "Pacific Airlines"), ("VU", "Vietravel Airlines")
+    };
 
     public FlightsController(ApplicationDbContext context)
     {
         _context = context;
     }
 
+    // --- Helper Populate Dropdowns ---
+    private async Task PopulateDropdownsAsync(FlightViewModel viewModel)
+    {
+        // Sân bay
+        var airportsQuery = _context.Airports.OrderBy(a => a.City).ThenBy(a => a.Code);
+        viewModel.AirportsList = await airportsQuery
+            .Select(a => new SelectListItem { Value = a.Id.ToString(), Text = $"{a.Name} ({a.Code})" })
+            .ToListAsync();
+
+        // Hãng bay (Value là Prefix)
+        viewModel.AirlinesList = AirlinesInfo
+            .Select(a => new SelectListItem { Value = a.Prefix, Text = $"{a.Name} ({a.Prefix})" })
+            .OrderBy(a => a.Text)
+            .ToList();
+    }
+
     // GET: Flights
     public async Task<IActionResult> Index(string sortOrder, string searchString)
     {
+        // Code Index giữ nguyên, không cần thay đổi vì nó làm việc trực tiếp với Flight model
         ViewData["NumberSortParm"] = String.IsNullOrEmpty(sortOrder) ? "number_desc" : "";
         ViewData["DateSortParm"] = sortOrder == "Date" ? "date_desc" : "Date";
         ViewData["AirlineSortParm"] = sortOrder == "Airline" ? "airline_desc" : "Airline";
@@ -26,218 +54,225 @@ public class FlightsController : Controller
         ViewData["CurrentFilter"] = searchString;
 
         var flights = _context.Flights
-                          .Include(f => f.DepartureAirport) // *** THÊM INCLUDE ***
-                          .Include(f => f.ArrivalAirport)   // *** THÊM INCLUDE ***
-                          .AsQueryable();
+                              .Include(f => f.DepartureAirport)
+                              .Include(f => f.ArrivalAirport)
+                              .AsQueryable();
 
         if (!String.IsNullOrEmpty(searchString))
         {
             flights = flights.Where(f =>
-            f.FlightNumber.Contains(searchString) || // Tìm theo số hiệu
-            f.Airline.Contains(searchString) ||      // Tìm theo hãng
-            (f.DepartureAirport != null &&           // Tìm theo tên/mã sân bay đi (kiểm tra null)
-                (f.DepartureAirport.City.Contains(searchString) || f.DepartureAirport.Code.Contains(searchString))) ||
-            (f.ArrivalAirport != null &&             // Tìm theo tên/mã sân bay đến (kiểm tra null)
-                (f.ArrivalAirport.City.Contains(searchString) || f.ArrivalAirport.Code.Contains(searchString)))
-        );
+               f.FlightNumber.Contains(searchString) ||
+               f.Airline.Contains(searchString) ||
+               (f.DepartureAirport != null && (f.DepartureAirport.City.Contains(searchString) || f.DepartureAirport.Code.Contains(searchString))) ||
+               (f.ArrivalAirport != null && (f.ArrivalAirport.City.Contains(searchString) || f.ArrivalAirport.Code.Contains(searchString)))
+           );
         }
-
+        //...(switch case sắp xếp)
         switch (sortOrder)
         {
-            case "number_desc":
-                flights = flights.OrderByDescending(f => f.FlightNumber);
-                break;
-            case "Date":
-                flights = flights.OrderBy(f => f.StartingTime);
-                break;
-            case "date_desc":
-                flights = flights.OrderByDescending(f => f.StartingTime);
-                break;
-            case "Airline":
-                flights = flights.OrderBy(f => f.Airline);
-                break;
-            case "airline_desc":
-                flights = flights.OrderByDescending(f => f.Airline);
-                break;
-            case "Price":
-                flights = flights.OrderBy(f => f.Price);
-                break;
-            case "price_desc":
-                flights = flights.OrderByDescending(f => f.Price);
-                break;
-            default: // Sort by FlightNumber ascending by default
-                flights = flights.OrderBy(f => f.FlightNumber);
-                break;
+            case "number_desc": flights = flights.OrderByDescending(f => f.FlightNumber); break;
+            case "Date": flights = flights.OrderBy(f => f.StartingTime); break;
+            case "date_desc": flights = flights.OrderByDescending(f => f.StartingTime); break;
+            case "Airline": flights = flights.OrderBy(f => f.Airline); break;
+            case "airline_desc": flights = flights.OrderByDescending(f => f.Airline); break;
+            case "Price": flights = flights.OrderBy(f => f.Price); break;
+            case "price_desc": flights = flights.OrderByDescending(f => f.Price); break;
+            default: flights = flights.OrderBy(f => f.FlightNumber); break;
         }
 
-        return View(await flights.AsNoTracking().ToListAsync()); // AsNoTracking() tối ưu cho đọc dữ liệu
+
+        return View(await flights.AsNoTracking().ToListAsync());
     }
 
     // GET: Flights/Details/5
     public async Task<IActionResult> Details(int? id)
     {
+        // Code Details giữ nguyên, làm việc với Flight model
         if (id == null) return NotFound();
         var flight = await _context.Flights
-                                     .Include(f => f.Sections) // Lấy thông tin Sections nếu cần hiển thị
-                                     .AsNoTracking() // Tối ưu đọc
+                                     .Include(f => f.DepartureAirport)
+                                     .Include(f => f.ArrivalAirport)
+                                     .Include(f => f.Sections)
+                                     .AsNoTracking()
                                      .FirstOrDefaultAsync(m => m.FlightId == id);
         if (flight == null) return NotFound();
         return View(flight);
     }
 
     // GET: Flights/Create
-    public IActionResult Create()
+    public async Task<IActionResult> Create()
     {
-        // Cung cấp giá trị mặc định hợp lý
-        var flight = new Flight
+        var viewModel = new FlightViewModel
         {
-            StartingTime = DateTime.Now.Date.AddDays(1).AddHours(9), // Mặc định ngày mai lúc 9h
-            ReachingTime = DateTime.Now.Date.AddDays(1).AddHours(11), // Mặc định ngày mai lúc 11h
-            Capacity = 100, // Mặc định sức chứa
-            AvailableSeats = 100 // Ban đầu số ghế trống bằng sức chứa
+            // Đặt giá trị mặc định nếu cần
+            StartingTime = DateTime.Now.AddHours(9),
+            ReachingTime = DateTime.Now.AddHours(11),
+            Capacity = 150,
+            Price = 1000000 
+
         };
-        return View(flight);
+
+        await PopulateDropdownsAsync(viewModel); // Truyền ViewModel vào để populate list
+        return View(viewModel); // **TRẢ VỀ VIEWMODEL**
     }
 
     // POST: Flights/Create
     [HttpPost]
     [ValidateAntiForgeryToken]
-    // Bind các thuộc tính cần thiết và được phép từ form
-    public async Task<IActionResult> Create([Bind("FlightNumber,Capacity,StartingTime,ReachingTime,StartingDestination,ReachingDestination,Airline,Price,AvailableSeats")] Flight flight)
+    public async Task<IActionResult> Create(FlightViewModel viewModel) // **NHẬN VIEWMODEL**
     {
-        // --- Kiểm tra validation logic nghiệp vụ ---
-        if (flight.StartingTime >= flight.ReachingTime)
-        {
+        // --- SERVER-SIDE VALIDATION THÊM ---
+        if (viewModel.StartingDestination == viewModel.ReachingDestination)
+            ModelState.AddModelError("ReachingDestination", "Sân bay đến không được trùng với sân bay đi.");
+        if (viewModel.StartingTime >= viewModel.ReachingTime)
             ModelState.AddModelError("ReachingTime", "Thời gian đến phải sau thời gian khởi hành.");
-        }
-        if (flight.AvailableSeats > flight.Capacity)
-        {
-            ModelState.AddModelError("AvailableSeats", "Số ghế còn lại không được lớn hơn tổng số ghế (sức chứa).");
-        }
-        // Có thể kiểm tra thêm thời gian khởi hành phải ở tương lai
-        if (flight.StartingTime <= DateTime.Now)
-        {
-            ModelState.AddModelError("StartingTime", "Thời gian khởi hành phải ở tương lai.");
-        }
+        if (viewModel.StartingTime < DateTime.Now) // Chỉ check giờ nếu ngày là hôm nay
+            ModelState.AddModelError("StartingTime", "Không thể chọn thời gian khởi hành trong quá khứ.");
 
-        // Kiểm tra ModelState sau khi thêm lỗi nghiệp vụ
-        if (ModelState.IsValid)
+        // Tạo số hiệu đầy đủ để kiểm tra trùng
+        string fullFlightNumber = viewModel.SelectedAirlinePrefix + viewModel.FlightNumberSuffix;
+        bool flightNumberExists = await _context.Flights.AnyAsync(f =>
+            f.FlightNumber == fullFlightNumber &&
+            f.StartingTime.Date == viewModel.StartingTime.Date);
+
+        if (flightNumberExists)
+            ModelState.AddModelError("FlightNumberSuffix", $"Số hiệu chuyến bay '{fullFlightNumber}' đã tồn tại trong ngày {viewModel.StartingTime:dd/MM/yyyy}.");
+        // --- KẾT THÚC VALIDATION THÊM ---
+
+        if (ModelState.IsValid) // Kiểm tra cả validation từ ViewModel và custom validation
         {
-            // Đảm bảo AvailableSeats không vượt Capacity khi tạo mới (dù đã có kiểm tra ở trên)
-            flight.AvailableSeats = Math.Min(flight.AvailableSeats, flight.Capacity);
+            // Map từ ViewModel sang Model Flight
+            var flight = new Flight
+            {
+                FlightNumber = fullFlightNumber, // Kết hợp prefix và suffix
+                Airline = AirlinesInfo.FirstOrDefault(a => a.Prefix == viewModel.SelectedAirlinePrefix).Name ?? "Không xác định", // Lấy tên hãng đầy đủ
+                StartingDestination = viewModel.StartingDestination,
+                ReachingDestination = viewModel.ReachingDestination,
+                StartingTime = viewModel.StartingTime,
+                ReachingTime = viewModel.ReachingTime,
+                Capacity = viewModel.Capacity,
+                Price = viewModel.Price,
+                AvailableSeats = viewModel.Capacity // Set AvailableSeats = Capacity
+                // Distance có thể tính hoặc bỏ qua
+            };
 
             _context.Add(flight);
             await _context.SaveChangesAsync();
             TempData["SuccessMessage"] = "Thêm chuyến bay mới thành công!";
             return RedirectToAction(nameof(Index));
         }
-        // Nếu ModelState không hợp lệ, trả về View với dữ liệu đã nhập và lỗi
-        return View(flight);
+
+        // Nếu không hợp lệ, populate lại dropdown và trả về View với ViewModel lỗi
+        await PopulateDropdownsAsync(viewModel);
+        return View(viewModel);
     }
 
     // GET: Flights/Edit/5
     public async Task<IActionResult> Edit(int? id)
     {
         if (id == null) return NotFound();
-        var flight = await _context.Flights.FindAsync(id); // FindAsync lấy entity để theo dõi thay đổi
+        var flight = await _context.Flights.FindAsync(id); // Lấy Flight gốc
         if (flight == null) return NotFound();
-        return View(flight);
+
+        // Map từ Flight sang ViewModel
+        var viewModel = new FlightViewModel
+        {
+            FlightId = flight.FlightId,
+            // Tách Prefix và Suffix từ FlightNumber
+            SelectedAirlinePrefix = flight.FlightNumber.Length >= 2 ? flight.FlightNumber.Substring(0, 2) : "",
+            FlightNumberSuffix = flight.FlightNumber.Length > 2 ? flight.FlightNumber.Substring(2) : "",
+            StartingDestination = flight.StartingDestination,
+            ReachingDestination = flight.ReachingDestination,
+            StartingTime = flight.StartingTime,
+            ReachingTime = flight.ReachingTime,
+            Capacity = flight.Capacity,
+            Price = flight.Price
+            // Không cần map AvailableSeats vào ViewModel
+        };
+
+        await PopulateDropdownsAsync(viewModel); // Populate dropdowns cho ViewModel
+        // ViewBag không cần thiết nữa nếu dùng ViewModel.AirlinesList/AirportsList
+
+        return View(viewModel); // **TRẢ VỀ VIEWMODEL**
     }
 
     // POST: Flights/Edit/5
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, [Bind("FlightId,FlightNumber,Capacity,StartingTime,ReachingTime,StartingDestination,ReachingDestination,Airline,Price,AvailableSeats")] Flight flight)
+    public async Task<IActionResult> Edit(int id, FlightViewModel viewModel) // **NHẬN VIEWMODEL**
     {
-        if (id != flight.FlightId) return NotFound();
+        if (id != viewModel.FlightId) return NotFound();
 
-        // --- Kiểm tra validation logic nghiệp vụ ---
-        if (flight.StartingTime >= flight.ReachingTime)
-        {
-            ModelState.AddModelError("ReachingTime", "Thời gian đến phải sau thời gian khởi hành.");
-        }
-        if (flight.AvailableSeats > flight.Capacity)
-        {
-            ModelState.AddModelError("AvailableSeats", "Số ghế còn lại không được lớn hơn tổng số ghế (sức chứa).");
-        }
-        // Kiểm tra logic phức tạp hơn: Số ghế trống mới không được nhỏ hơn số ghế đã bán (đang không bị hủy)
-        int currentlyBookedSeats = await _context.Tickets.CountAsync(t => t.FlightId == id && t.Status != "Cancelled");
-        if (flight.Capacity < currentlyBookedSeats)
-        {
-            ModelState.AddModelError("Capacity", $"Không thể giảm sức chứa xuống dưới số vé đã bán ({currentlyBookedSeats}).");
-        }
-        if (flight.AvailableSeats < 0) // Đảm bảo không âm
-        {
-            ModelState.AddModelError("AvailableSeats", "Số ghế còn lại không được là số âm.");
-        }
+        // --- SERVER-SIDE VALIDATION THÊM (Tương tự Create) ---
+        if (viewModel.StartingDestination == viewModel.ReachingDestination) ModelState.AddModelError("ReachingDestination", "Sân bay đến không được trùng với sân bay đi.");
+        if (viewModel.StartingTime >= viewModel.ReachingTime) ModelState.AddModelError("ReachingTime", "Thời gian đến phải sau thời gian khởi hành.");
+        // Kiểm tra ngày quá khứ có thể không cần nếu datepicker client-side hoạt động tốt
+        // if (viewModel.StartingTime < DateTime.Now) ModelState.AddModelError("StartingTime", "Không thể chọn thời gian khởi hành trong quá khứ.");
 
-        // Kiểm tra ModelState sau khi thêm lỗi nghiệp vụ
+        string fullFlightNumber = viewModel.SelectedAirlinePrefix + viewModel.FlightNumberSuffix;
+        bool flightNumberExists = await _context.Flights.AnyAsync(f =>
+            f.FlightNumber == fullFlightNumber &&
+            f.StartingTime.Date == viewModel.StartingTime.Date &&
+            f.FlightId != viewModel.FlightId); // Loại trừ chính nó
+
+        if (flightNumberExists) ModelState.AddModelError("FlightNumberSuffix", $"Số hiệu chuyến bay '{fullFlightNumber}' đã tồn tại trong ngày {viewModel.StartingTime:dd/MM/yyyy}.");
+        // --- KẾT THÚC VALIDATION THÊM ---
+
+
         if (ModelState.IsValid)
         {
             try
             {
-                // Chỉ cập nhật entity đã lấy từ DB để tránh ghi đè không mong muốn
                 var flightToUpdate = await _context.Flights.FirstOrDefaultAsync(f => f.FlightId == id);
                 if (flightToUpdate == null) return NotFound();
 
-                // Cập nhật các thuộc tính từ model binding vào entity đang được theo dõi
-                flightToUpdate.FlightNumber = flight.FlightNumber;
-                flightToUpdate.Capacity = flight.Capacity;
-                flightToUpdate.StartingTime = flight.StartingTime;
-                flightToUpdate.ReachingTime = flight.ReachingTime;
-                flightToUpdate.StartingDestination = flight.StartingDestination;
-                flightToUpdate.ReachingDestination = flight.ReachingDestination;
-                flightToUpdate.Airline = flight.Airline;
-                flightToUpdate.Price = flight.Price;
-                flightToUpdate.AvailableSeats = flight.AvailableSeats;
-                // Đảm bảo AvailableSeats không vượt Capacity sau khi cập nhật
-                flightToUpdate.AvailableSeats = Math.Min(flightToUpdate.AvailableSeats, flightToUpdate.Capacity);
+                // Map các thay đổi từ ViewModel sang Entity gốc
+                flightToUpdate.FlightNumber = fullFlightNumber;
+                flightToUpdate.Airline = AirlinesInfo.FirstOrDefault(a => a.Prefix == viewModel.SelectedAirlinePrefix).Name ?? flightToUpdate.Airline; // Giữ lại giá trị cũ nếu prefix lỗi
+                flightToUpdate.StartingDestination = viewModel.StartingDestination;
+                flightToUpdate.ReachingDestination = viewModel.ReachingDestination;
+                flightToUpdate.StartingTime = viewModel.StartingTime;
+                flightToUpdate.ReachingTime = viewModel.ReachingTime;
+                flightToUpdate.Capacity = viewModel.Capacity;
+                flightToUpdate.Price = viewModel.Price;
+                // Cập nhật AvailableSeats dựa trên Capacity mới nếu cần (ví dụ: nếu Capacity giảm)
+                flightToUpdate.AvailableSeats = Math.Min(flightToUpdate.AvailableSeats, viewModel.Capacity);
 
-
-                // _context.Update(flightToUpdate); // Không cần gọi Update nếu entity đã được theo dõi
+                //_context.Update(flightToUpdate); // Không cần thiết khi entity được theo dõi
                 await _context.SaveChangesAsync();
                 TempData["SuccessMessage"] = "Cập nhật thông tin chuyến bay thành công!";
             }
-            catch (DbUpdateConcurrencyException) // Xử lý lỗi trùng khớp dữ liệu
+            catch (DbUpdateConcurrencyException)
             {
-                if (!FlightExists(flight.FlightId))
-                {
-                    return NotFound();
-                }
+                if (!FlightExists(viewModel.FlightId)) return NotFound();
                 else
                 {
-                    ModelState.AddModelError(string.Empty, "Dữ liệu đã được người khác thay đổi. Vui lòng tải lại trang và thử lại.");
-                    // Không return View(flight) vì flight có thể là dữ liệu cũ
-                    var currentFlight = await _context.Flights.AsNoTracking().FirstOrDefaultAsync(f => f.FlightId == id);
-                    if (currentFlight != null) return View(currentFlight); // Hiển thị dữ liệu mới nhất
-                    else return NotFound(); // Hoặc báo not found nếu đã bị xóa
+                    ModelState.AddModelError(string.Empty, "Dữ liệu bị thay đổi bởi người khác. Tải lại?");
+                    await PopulateDropdownsAsync(viewModel); // Populate lại dropdown
+                    return View(viewModel);
                 }
             }
             return RedirectToAction(nameof(Index));
         }
-        // Nếu ModelState không hợp lệ, trả về View với dữ liệu đã nhập và lỗi
-        return View(flight);
+
+        // Nếu không hợp lệ, populate lại dropdown và trả về View với ViewModel lỗi
+        await PopulateDropdownsAsync(viewModel);
+        return View(viewModel);
     }
 
     // GET: Flights/Delete/5
-    public async Task<IActionResult> Delete(int? id, bool? saveChangesError = false) // Thêm tham số báo lỗi
+    public async Task<IActionResult> Delete(int? id, bool? saveChangesError = false)
     {
+        // Code Delete giữ nguyên, làm việc với Flight model
         if (id == null) return NotFound();
-
         var flight = await _context.Flights
-            .AsNoTracking() // Đọc để hiển thị, không cần theo dõi
-            .FirstOrDefaultAsync(m => m.FlightId == id);
+                                     .Include(f => f.DepartureAirport)
+                                     .Include(f => f.ArrivalAirport)
+                                     .AsNoTracking()
+                                     .FirstOrDefaultAsync(m => m.FlightId == id);
         if (flight == null) return NotFound();
-
-        if (saveChangesError.GetValueOrDefault()) // Kiểm tra nếu có lỗi từ lần POST trước
-        {
-            ViewData["ErrorMessage"] = "Xóa thất bại. Hãy thử lại, hoặc liên hệ quản trị viên nếu lỗi tiếp diễn.";
-        }
-
-        // Kiểm tra trước xem có vé đang hoạt động không
+        if (saveChangesError.GetValueOrDefault()) ViewData["ErrorMessage"] = "Xóa thất bại...";
         ViewData["HasActiveTickets"] = await _context.Tickets.AnyAsync(t => t.FlightId == id && t.Status != "Cancelled");
-
-
         return View(flight);
     }
 
@@ -246,44 +281,33 @@ public class FlightsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
-        // Kiểm tra lại lần nữa trước khi xóa thực sự
+        // Code DeleteConfirmed giữ nguyên, làm việc với Flight model
         var hasActiveTickets = await _context.Tickets.AnyAsync(t => t.FlightId == id && t.Status != "Cancelled");
         if (hasActiveTickets)
         {
-            TempData["ErrorMessage"] = "Không thể xóa chuyến bay vì vẫn còn vé đang hoạt động (chưa bị hủy).";
-            return RedirectToAction(nameof(Delete), new { id = id }); // Quay lại trang Delete GET để hiển thị lỗi
+            TempData["ErrorMessage"] = "Không thể xóa chuyến bay vì vẫn còn vé đang hoạt động.";
+            return RedirectToAction(nameof(Delete), new { id = id });
         }
-
         var flight = await _context.Flights.FindAsync(id);
         if (flight == null)
         {
             TempData["ErrorMessage"] = "Không tìm thấy chuyến bay để xóa.";
             return RedirectToAction(nameof(Index));
         }
-
         try
         {
-            // Cân nhắc xóa các Section liên quan nếu cần (phụ thuộc vào cấu hình FK)
-            // var sections = await _context.Sections.Where(s => s.FlightId == id).ToListAsync();
-            // if (sections.Any()) _context.Sections.RemoveRange(sections);
-
             _context.Flights.Remove(flight);
             await _context.SaveChangesAsync();
             TempData["SuccessMessage"] = "Xóa chuyến bay thành công!";
             return RedirectToAction(nameof(Index));
         }
-        catch (DbUpdateException ex) // Bắt lỗi liên quan đến database
+        catch (DbUpdateException)
         {
-            // Log lỗi (dùng thư viện logging)
-            // Logger.LogError(ex, "Error deleting flight {FlightId}", id);
-            TempData["ErrorMessage"] = "Đã xảy ra lỗi khi xóa chuyến bay. Vui lòng thử lại.";
-            // Chuyển hướng về trang Delete GET với tham số báo lỗi
+            TempData["ErrorMessage"] = "Đã xảy ra lỗi khi xóa chuyến bay...";
             return RedirectToAction(nameof(Delete), new { id = id, saveChangesError = true });
         }
     }
 
-    private bool FlightExists(int id)
-    {
-        return (_context.Flights?.Any(e => e.FlightId == id)).GetValueOrDefault();
-    }
+
+    private bool FlightExists(int id) => (_context.Flights?.Any(e => e.FlightId == id)).GetValueOrDefault();
 }

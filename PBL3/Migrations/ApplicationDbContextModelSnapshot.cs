@@ -185,7 +185,7 @@ namespace PBL3.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Airports");
+                    b.ToTable("Airports", (string)null);
                 });
 
             modelBuilder.Entity("PBL3.Models.AppUser", b =>
@@ -322,7 +322,7 @@ namespace PBL3.Migrations
 
                     b.HasIndex("StartingDestination");
 
-                    b.ToTable("Flights");
+                    b.ToTable("Flights", (string)null);
                 });
 
             modelBuilder.Entity("PBL3.Models.Section", b =>
@@ -348,7 +348,7 @@ namespace PBL3.Migrations
 
                     b.HasIndex("FlightId");
 
-                    b.ToTable("Sections");
+                    b.ToTable("Sections", (string)null);
                 });
 
             modelBuilder.Entity("PBL3.Models.Ticket", b =>
@@ -397,7 +397,7 @@ namespace PBL3.Migrations
 
                     b.HasIndex("SectionId");
 
-                    b.ToTable("Tickets");
+                    b.ToTable("Tickets", (string)null);
                 });
 
             modelBuilder.Entity("PBL3.Models.Employee", b =>

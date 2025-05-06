@@ -94,6 +94,7 @@ public class FlightsController : Controller
                                      .Include(f => f.ArrivalAirport)
                                      .Include(f => f.Sections)
                                      .AsNoTracking()
+
                                      .FirstOrDefaultAsync(m => m.FlightId == id);
         if (flight == null) return NotFound();
         return View(flight);

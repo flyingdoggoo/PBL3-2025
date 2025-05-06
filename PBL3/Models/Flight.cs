@@ -42,7 +42,7 @@ namespace PBL3.Models
         [Display(Name = "Giá vé (từ)")]
         public decimal Price { get; set; } // Giá cơ sở
 
-        [Required(ErrorMessage = "Vui lòng nhập hãng bay.")]
+        // [Required(ErrorMessage = "Vui lòng nhập hãng bay.")]
         [StringLength(100)]
         [Display(Name = "Hãng bay")]
         public string Airline { get; set; }

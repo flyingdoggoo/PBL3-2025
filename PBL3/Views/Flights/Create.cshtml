@@ -1,76 +1,90 @@
-﻿@model PBL3.Models.Flight
-@{
-    ViewData["Title"] = "Thêm chuyến bay mới";
-}
+﻿@model PBL3.Models.ViewModels.FlightViewModel 
+@{ ViewData["Title"] = "Thêm chuyến bay mới"; }
 
 <h4>@ViewData["Title"]</h4>
 <hr />
 <div class="row">
     <div class="col-md-8">
-        <form asp-action="Create">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <form asp-action="Create" id="flightForm">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
             <div class="row mb-3">
+                @* Hãng bay (Dropdown - Sử dụng ViewModel) *@
                 <div class="col-md-6">
-                    <label asp-for="FlightNumber" class="control-label"></label>
-                    <input asp-for="FlightNumber" class="form-control" />
-                    <span asp-validation-for="FlightNumber" class="text-danger"></span>
+                    <label asp-for="SelectedAirlinePrefix" class="form-label fw-bold"></label>
+                    <select asp-for="SelectedAirlinePrefix" id="SelectedAirlinePrefix" class="form-select" asp-items="Model.AirlinesList"> @* **SỬA ASP-ITEMS** *@
+                        <option value="">-- Chọn hãng bay --</option>
+                    </select>
+                    <span asp-validation-for="SelectedAirlinePrefix" class="text-danger"></span> @* Validation cho Prefix *@
                 </div>
+
+                @* Số hiệu chuyến bay (Suffix - Input) *@
                 <div class="col-md-6">
-                    <label asp-for="Airline" class="control-label"></label>
-                    <input asp-for="Airline" class="form-control" />
-                    <span asp-validation-for="Airline" class="text-danger"></span>
+                    <label asp-for="FlightNumberSuffix" class="form-label fw-bold"></label>
+                    <div class="input-group"> @* Thêm input-group để hiển thị prefix *@
+                         <span class="input-group-text" id="flightPrefixDisplay">--</span> @* Hiển thị prefix ở đây *@
+                         <input asp-for="FlightNumberSuffix" class="form-control" placeholder="123" aria-describedby="flightPrefixDisplay" />
+                    </div>
+                    <span asp-validation-for="FlightNumberSuffix" class="text-danger"></span>
+                     <div id="flightNumberInfo" class="form-text small text-muted">Nhập số hiệu sau mã hãng.</div>
                 </div>
             </div>
 
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <label asp-for="StartingDestination" class="control-label"></label>
-                    <input asp-for="StartingDestination" class="form-control" />
+             <div class="row mb-3">
+                 @* Sân bay đi (Dropdown - Sử dụng ViewModel) *@
+                 <div class="col-md-6">
+                    <label asp-for="StartingDestination" class="form-label fw-bold"></label>
+                    <select asp-for="StartingDestination" id="StartingDestination" class="form-select" asp-items="Model.AirportsList"> @* **SỬA ASP-ITEMS** *@
+                         <option value="">-- Chọn sân bay đi --</option>
+                    </select>
                     <span asp-validation-for="StartingDestination" class="text-danger"></span>
+                     <div id="airportError" class="text-danger small" style="display: none;">Sân bay đi và đến không được trùng.</div>
                 </div>
-                <div class="col-md-6">
-                    <label asp-for="ReachingDestination" class="control-label"></label>
-                    <input asp-for="ReachingDestination" class="form-control" />
+                 @* Sân bay đến (Dropdown - Sử dụng ViewModel) *@
+                 <div class="col-md-6">
+                    <label asp-for="ReachingDestination" class="form-label fw-bold"></label>
+                     <select asp-for="ReachingDestination" id="ReachingDestination" class="form-select" asp-items="Model.AirportsList"> @* **SỬA ASP-ITEMS** *@
+                         <option value="">-- Chọn sân bay đến --</option>
+                    </select>
                     <span asp-validation-for="ReachingDestination" class="text-danger"></span>
                 </div>
-            </div>
+             </div>
 
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <label asp-for="StartingTime" class="control-label"></label>
-                    <input asp-for="StartingTime" type="datetime-local" class="form-control" />
+             <div class="row mb-3">
+                 @* Thời gian khởi hành (Date Picker) *@
+                 <div class="col-md-6">
+                    <label asp-for="StartingTime" class="form-label fw-bold"></label>
+                    <input asp-for="StartingTime" type="text" class="form-control datepicker" placeholder="Chọn ngày giờ đi" />
                     <span asp-validation-for="StartingTime" class="text-danger"></span>
                 </div>
-                <div class="col-md-6">
-                    <label asp-for="ReachingTime" class="control-label"></label>
-                    <input asp-for="ReachingTime" type="datetime-local" class="form-control" />
+                 @* Thời gian đến (Date Picker) *@
+                 <div class="col-md-6">
+                    <label asp-for="ReachingTime" class="form-label fw-bold"></label>
+                    <input asp-for="ReachingTime" type="text" class="form-control datepicker" placeholder="Chọn ngày giờ đến" />
                     <span asp-validation-for="ReachingTime" class="text-danger"></span>
+                    <div id="timeError" class="text-danger small" style="display: none;">Giờ đến phải sau giờ khởi hành.</div>
                 </div>
-            </div>
+             </div>
 
-            <div class="row mb-3">
-                <div class="col-md-4">
-                    <label asp-for="Capacity" class="control-label"></label>
-                    <input asp-for="Capacity" type="number" class="form-control" />
+              <div class="row mb-3">
+                 @* Tổng số ghế (Input) *@
+                 <div class="col-md-6">
+                    <label asp-for="Capacity" class="form-label fw-bold"></label>
+                    <input asp-for="Capacity" type="number" min="1" class="form-control" />
                     <span asp-validation-for="Capacity" class="text-danger"></span>
                 </div>
-                <div class="col-md-4">
-                    <label asp-for="AvailableSeats" class="control-label"></label>
-                    <input asp-for="AvailableSeats" type="number" class="form-control" />
-                    <span asp-validation-for="AvailableSeats" class="text-danger"></span>
-                </div>
-                <div class="col-md-4">
-                    <label asp-for="Price" class="control-label"></label>
-                    <input asp-for="Price" type="number" step="1000" class="form-control" /> @* step tùy chỉnh *@
+                 @* Giá vé (Input) *@
+                 <div class="col-md-6">
+                    <label asp-for="Price" class="form-label fw-bold"></label>
+                    <input asp-for="Price" type="number" step="10000" min="0" class="form-control" />
                     <span asp-validation-for="Price" class="text-danger"></span>
                 </div>
-            </div>
-
+             </div>
 
             <div class="form-group mt-4">
-                <button type="submit" class="btn btn-primary">Tạo mới</button>
-                <a asp-action="Index" class="btn btn-secondary">Quay lại danh sách</a>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Tạo mới</button>
+                <a asp-action="Index" class="btn btn-secondary"><i class="fas fa-arrow-left me-1"></i> Quay lại</a>
             </div>
         </form>
     </div>
@@ -78,4 +92,96 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/vn.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // --- Flatpickr (Giữ nguyên logic) ---
+            const config = { enableTime: true, dateFormat: "Y-m-d H:i", altInput: true, altFormat:"d/m/Y H:i", time_24hr: true, locale: "vn", minuteIncrement: 15, disableMobile: "true" };
+             const startTimeInput = document.querySelector("input[name='StartingTime']");
+             const reachingTimeInput = document.querySelector("input[name='ReachingTime']");
+
+             const startTimePicker = flatpickr(startTimeInput, {
+                 ...config,
+                 minDate: "today",
+                 onChange: function(selectedDates, dateStr, instance) {
+                    if (selectedDates[0]) {
+                        let minReachingDate = new Date(selectedDates[0].getTime() + 60000); // + 1 phút
+                        reachingTimePicker.set('minDate', minReachingDate);
+                        validateTime();
+                    } else {
+                         reachingTimePicker.set('minDate', null);
+                    }
+                }
+            });
+             const reachingTimePicker = flatpickr(reachingTimeInput, {
+                 ...config,
+                 minDate: startTimeInput._flatpickr.selectedDates[0] ? new Date(startTimeInput._flatpickr.selectedDates[0].getTime() + 60000) : null,
+                 onChange: function() { validateTime(); } // Validate khi giờ đến thay đổi
+             });
+
+
+            // --- Xử lý chọn Hãng bay và Hiển thị Prefix ---
+            const airlineSelect = document.getElementById('SelectedAirlinePrefix'); // **SỬA ID**
+            const flightNumberSuffixInput = document.getElementById('FlightNumberSuffix'); // **SỬA ID**
+            const flightPrefixDisplay = document.getElementById('flightPrefixDisplay'); // Span hiển thị prefix
+            const flightNumberInfo = document.getElementById('flightNumberInfo');
+
+            function updatePrefixDisplay() {
+                 const selectedPrefix = airlineSelect.value;
+                 if (selectedPrefix) {
+                    flightPrefixDisplay.textContent = selectedPrefix;
+                    flightNumberInfo.textContent = `Nhập số hiệu sau mã "${selectedPrefix}".`;
+                 } else {
+                    flightPrefixDisplay.textContent = "--";
+                     flightNumberInfo.textContent = 'Vui lòng chọn hãng bay.';
+                 }
+            }
+
+            if (airlineSelect) {
+                airlineSelect.addEventListener('change', updatePrefixDisplay);
+                updatePrefixDisplay(); // Cập nhật khi tải trang (cho Edit)
+            }
+
+            // --- Client-Side Validation (Giữ nguyên logic, chỉ sửa ID/selector nếu cần) ---
+             const startAirportSelect = document.getElementById('StartingDestination');
+            const reachAirportSelect = document.getElementById('ReachingDestination');
+            const airportErrorDiv = document.getElementById('airportError');
+            const timeErrorDiv = document.getElementById('timeError');
+
+            function validateAirports() { /* ... giữ nguyên ... */
+                 if (startAirportSelect.value && reachAirportSelect.value && startAirportSelect.value === reachAirportSelect.value) {
+                    airportErrorDiv.style.display = 'block';
+                    startAirportSelect.classList.add('is-invalid');
+                    reachAirportSelect.classList.add('is-invalid');
+                    return false;
+                } else {
+                    airportErrorDiv.style.display = 'none';
+                     startAirportSelect.classList.remove('is-invalid');
+                    reachAirportSelect.classList.remove('is-invalid');
+                    return true;
+                }
+            }
+            function validateTime() { /* ... giữ nguyên ... */
+                const startTime = startTimePicker.selectedDates[0];
+                const reachingTime = reachingTimePicker.selectedDates[0];
+                if (startTime && reachingTime && reachingTime <= startTime) {
+                    timeErrorDiv.style.display = 'block';
+                    reachingTimeInput.classList.add('is-invalid');
+                    return false;
+                } else {
+                    timeErrorDiv.style.display = 'none';
+                     reachingTimeInput.classList.remove('is-invalid');
+                    return true;
+                }
+            }
+
+            if (startAirportSelect) startAirportSelect.addEventListener('change', validateAirports);
+            if (reachAirportSelect) reachAirportSelect.addEventListener('change', validateAirports);
+             // Time được validate bởi onChange của datepickers
+
+        });
+    </script>
 }

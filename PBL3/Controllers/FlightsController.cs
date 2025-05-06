@@ -78,8 +78,10 @@ public class FlightsController : Controller
     {
         if (id == null) return NotFound();
         var flight = await _context.Flights
-                                     .Include(f => f.Sections) // Lấy thông tin Sections nếu cần hiển thị
-                                     .AsNoTracking() // Tối ưu đọc
+                                     .Include(f => f.DepartureAirport) // *** THÊM INCLUDE SÂN BAY ĐI ***
+                                     .Include(f => f.ArrivalAirport)   // *** THÊM INCLUDE SÂN BAY ĐẾN ***
+                                     .Include(f => f.Sections)         // Giữ lại nếu cần hiển thị Sections
+                                     .AsNoTracking() // Dùng AsNoTracking vì chỉ đọc dữ liệu
                                      .FirstOrDefaultAsync(m => m.FlightId == id);
         if (flight == null) return NotFound();
         return View(flight);

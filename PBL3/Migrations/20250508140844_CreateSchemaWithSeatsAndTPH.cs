@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace PBL3.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialSchema : Migration
+    public partial class CreateSchemaWithSeatsAndTPH : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -234,6 +234,35 @@ namespace PBL3.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Seats",
+                columns: table => new
+                {
+                    SeatId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    SeatNumber = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
+                    FlightId = table.Column<int>(type: "int", nullable: false),
+                    SectionId = table.Column<int>(type: "int", nullable: true),
+                    Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    SeatType = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Notes = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Seats", x => x.SeatId);
+                    table.ForeignKey(
+                        name: "FK_Seats_Flights_FlightId",
+                        column: x => x.FlightId,
+                        principalTable: "Flights",
+                        principalColumn: "FlightId",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Seats_Sections_SectionId",
+                        column: x => x.SectionId,
+                        principalTable: "Sections",
+                        principalColumn: "SectionId");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Tickets",
                 columns: table => new
                 {
@@ -325,6 +354,16 @@ namespace PBL3.Migrations
                 column: "StartingDestination");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Seats_FlightId",
+                table: "Seats",
+                column: "FlightId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Seats_SectionId",
+                table: "Seats",
+                column: "SectionId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Sections_FlightId",
                 table: "Sections",
                 column: "FlightId");
@@ -367,6 +406,9 @@ namespace PBL3.Migrations
 
             migrationBuilder.DropTable(
                 name: "AspNetUserTokens");
+
+            migrationBuilder.DropTable(
+                name: "Seats");
 
             migrationBuilder.DropTable(
                 name: "Tickets");

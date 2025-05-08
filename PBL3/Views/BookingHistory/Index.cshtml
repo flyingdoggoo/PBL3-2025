@@ -35,7 +35,8 @@ else
                     <tr>
                         <td>@ticket.TicketId</td>
                          <td>@ticket.Flight?.FlightNumber (@ticket.Flight?.Airline)</td>
-                         <td>@ticket.Flight?.StartingDestination → @ticket.Flight?.ReachingDestination</td>
+                         @* <td>@ticket.Flight?.StartingDestination → @ticket.Flight?.ReachingDestination</td> *@
+                         <td>@(ticket.Flight?.DepartureAirport?.Code ?? "?") → @(ticket.Flight?.ArrivalAirport?.Code ?? "?")</td>
                          <td>@ticket.Flight?.StartingTime.ToString("dd/MM/yyyy")</td>
                         <td class="text-end">@ticket.Price.ToString("N0")</td>
                         <td>
@@ -44,16 +45,15 @@ else
                             else { <span class="badge bg-secondary">@ticket.Status</span>}
                         </td>
                          <td class="text-end">
-                             <a asp-action="Details" asp-route-id="@ticket.TicketId" class="btn btn-sm btn-outline-info" title="Xem chi tiết">
-                                 <i class="fas fa-eye"></i>
-                             </a>
-                             @* Optional: Nút hủy cho khách *@
-                             @* @if(ticket.Status == "Booked" && ticket.Flight?.StartingTime > DateTime.Now.AddHours(24)) // Ví dụ: Chỉ cho hủy trước 24h
-                             {
-                                <a asp-action="Cancel" asp-route-id="@ticket.TicketId" class="btn btn-sm btn-outline-danger ms-1" title="Hủy vé">
-                                     <i class="fas fa-ban"></i>
+                             <a asp-action="Details" asp-route-id="@ticket.TicketId" class="btn btn-outline-info me-1" title="Xem chi tiết">
+                                <i class="fas fa-eye me-1"></i> Xem chi tiết
+                            </a>
+                            @if(ticket.Status == "Booked" && ticket.Flight?.StartingTime > DateTime.Now.AddHours(24))
+                            {
+                                <a asp-action="CancelRequest" asp-route-id="@ticket.TicketId" class="btn btn-outline-danger" title="Yêu cầu Hủy vé">
+                                     <i class="fas fa-ban me-1"></i> Yêu cầu hủy
                                 </a>
-                             } *@
+                            }
                         </td>
                     </tr>
                 }

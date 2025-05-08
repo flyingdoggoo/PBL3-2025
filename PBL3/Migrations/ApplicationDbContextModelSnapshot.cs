@@ -185,7 +185,7 @@ namespace PBL3.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Airports", (string)null);
+                    b.ToTable("Airports");
                 });
 
             modelBuilder.Entity("PBL3.Models.AppUser", b =>
@@ -322,7 +322,46 @@ namespace PBL3.Migrations
 
                     b.HasIndex("StartingDestination");
 
-                    b.ToTable("Flights", (string)null);
+                    b.ToTable("Flights");
+                });
+
+            modelBuilder.Entity("PBL3.Models.Seat", b =>
+                {
+                    b.Property<int>("SeatId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SeatId"));
+
+                    b.Property<int>("FlightId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SeatNumber")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("SeatType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("SectionId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("SeatId");
+
+                    b.HasIndex("FlightId");
+
+                    b.HasIndex("SectionId");
+
+                    b.ToTable("Seats");
                 });
 
             modelBuilder.Entity("PBL3.Models.Section", b =>
@@ -348,7 +387,7 @@ namespace PBL3.Migrations
 
                     b.HasIndex("FlightId");
 
-                    b.ToTable("Sections", (string)null);
+                    b.ToTable("Sections");
                 });
 
             modelBuilder.Entity("PBL3.Models.Ticket", b =>
@@ -375,9 +414,8 @@ namespace PBL3.Migrations
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<string>("SeatNumber")
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
+                    b.Property<int>("SeatId")
+                        .HasColumnType("int");
 
                     b.Property<int?>("SectionId")
                         .HasColumnType("int");
@@ -395,9 +433,12 @@ namespace PBL3.Migrations
 
                     b.HasIndex("PassengerId");
 
+                    b.HasIndex("SeatId")
+                        .IsUnique();
+
                     b.HasIndex("SectionId");
 
-                    b.ToTable("Tickets", (string)null);
+                    b.ToTable("Tickets");
                 });
 
             modelBuilder.Entity("PBL3.Models.Employee", b =>
@@ -491,6 +532,23 @@ namespace PBL3.Migrations
                     b.Navigation("DepartureAirport");
                 });
 
+            modelBuilder.Entity("PBL3.Models.Seat", b =>
+                {
+                    b.HasOne("PBL3.Models.Flight", "Flight")
+                        .WithMany()
+                        .HasForeignKey("FlightId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PBL3.Models.Section", "Section")
+                        .WithMany()
+                        .HasForeignKey("SectionId");
+
+                    b.Navigation("Flight");
+
+                    b.Navigation("Section");
+                });
+
             modelBuilder.Entity("PBL3.Models.Section", b =>
                 {
                     b.HasOne("PBL3.Models.Flight", "Flight")
@@ -520,6 +578,12 @@ namespace PBL3.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("PBL3.Models.Seat", "Seat")
+                        .WithOne()
+                        .HasForeignKey("PBL3.Models.Ticket", "SeatId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("PBL3.Models.Section", "Section")
                         .WithMany()
                         .HasForeignKey("SectionId");
@@ -529,6 +593,8 @@ namespace PBL3.Migrations
                     b.Navigation("Flight");
 
                     b.Navigation("Passenger");
+
+                    b.Navigation("Seat");
 
                     b.Navigation("Section");
                 });

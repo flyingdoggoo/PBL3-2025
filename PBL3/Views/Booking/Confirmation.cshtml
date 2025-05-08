@@ -24,8 +24,8 @@
                     <dd class="col-sm-8">@Model.Flight?.FlightNumber (@Model.Flight?.StartingDestination → @Model.Flight?.ReachingDestination)</dd>
                     <dt class="col-sm-4">Khởi hành:</dt>
                     <dd class="col-sm-8">@Model.Flight?.StartingTime.ToString("HH:mm, dd/MM/yyyy")</dd>
-                    <dt class="col-sm-4">Số ghế:</dt>
-                    <dd class="col-sm-8">@(Model.SeatNumber ?? "Sẽ được gán sau")</dd>
+                    <dt class="col-sm-4">Số Ghế:</dt> @* Đổi label *@
+                    <dd class="col-sm-8">@Model.SeatId</dd> @* <<< HIỂN THỊ SeatId <<< *@
                     <dt class="col-sm-4">Tổng tiền:</dt>
                     <dd class="col-sm-8 fw-bold">@Model.Price.ToString("N0") VNĐ</dd>
                     <dt class="col-sm-4">Trạng thái:</dt>

@@ -66,7 +66,7 @@ else
                                 <small class="d-block text-muted">/khách (từ)</small>
                                 <div class="d-grid gap-2 mt-2">
                                     @* Nút chiếm hết chiều rộng *@
-                                    <a asp-controller="Booking" asp-action="SelectFlight" asp-route-flightId="@flight.FlightId" class="btn btn-warning btn-sm fw-bold">Chọn chuyến</a>
+                                    <a asp-controller="Booking" asp-action="StartBooking" asp-route-flightId="@flight.FlightId" class="btn btn-warning btn-sm fw-bold">Chọn chuyến</a>
                                     <a asp-controller="FlightSearch" asp-action="Details" asp-route-id="@flight.FlightId" class="btn btn-outline-secondary btn-sm">Xem chi tiết</a>
                                 </div>
                             </div>

@@ -1,0 +1,156 @@
+﻿@model PBL3.Models.ViewModels.PaymentViewModel
+@{
+    ViewData["Title"] = "Xác nhận Thanh toán";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        @* CỘT BÊN TRÁI: HÌNH ẢNH/QR (giống Confirmation.cshtml) *@
+        <div class="col-lg-5 col-md-6 d-none d-md-block text-center align-self-center mb-4 mb-lg-0">
+            <img src="~/lib/QR Code.png" alt="Thanh toán" class="img-fluid rounded shadow-sm" style="max-height: 400px;" />
+            <p class="mt-3 text-muted fs-4">Quét mã QR để thanh toán hoặc chuyển khoản.</p>
+            <p class="mt-3 fs-4">STK: 1029384756 CottonBank</p>
+            <p class="mt-3 fs-4">AGIN CORP</p>
+            <p class="mt-3 fs-4 fw-bold">Nội dung: TT [Tên người đặt vé] [Mã chuyến bay]</p>
+            <p class="small text-muted">(Sau khi chuyển khoản, nhấn "Xác nhận Thanh toán" để hoàn tất)</p>
+        </div>
+
+        @* CỘT BÊN PHẢI: THÔNG TIN THANH TOÁN *@
+        <div class="col-lg-6 col-md-6">
+            <div class="card shadow-lg border-primary">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <i class="fas fa-credit-card fa-3x mb-2"></i>
+                    <h2 class="mb-0">@ViewData["Title"]</h2>
+                    <p class="lead mb-0">Vui lòng kiểm tra lại thông tin đặt vé và tiến hành thanh toán.</p>
+                </div>
+                <div class="card-body p-4">
+
+                    <div class="text-center mb-4">
+                        <h2 class="text-danger fw-bold">Tổng cộng: @Model.Total.ToString("N0") VNĐ</h2>
+                    </div>
+                    <hr>
+
+                    @if (Model.FlightInfo != null)
+                    {
+                        <h5 class="text-primary mb-3"><i class="fas fa-plane-departure me-2"></i>Thông tin chuyến bay</h5>
+                        <dl class="row small">
+                            <dt class="col-sm-4 fw-normal text-muted">Chuyến bay:</dt>
+                            <dd class="col-sm-8">
+                                @Model.FlightInfo.FlightNumber
+                                <span class="text-muted">(@Model.FlightInfo.AirlineName)</span>
+                            </dd>
+
+                            <dt class="col-sm-4 fw-normal text-muted">Hành trình:</dt>
+                            <dd class="col-sm-8">
+                                <strong>@Model.FlightInfo.DepartureAirportName</strong>
+                                <i class="fas fa-long-arrow-alt-right mx-1"></i>
+                                <strong>@Model.FlightInfo.ArrivalAirportName</strong>
+                            </dd>
+
+                            <dt class="col-sm-4 fw-normal text-muted">Cất cánh:</dt>
+                            <dd class="col-sm-8">@Model.FlightInfo.DepartureTime.ToString("HH:mm, dd/MM/yyyy")</dd>
+
+                            <dt class="col-sm-4 fw-normal text-muted">Hạ cánh:</dt>
+                            <dd class="col-sm-8">@Model.FlightInfo.ArrivalTime.ToString("HH:mm, dd/MM/yyyy")</dd>
+
+                            <dt class="col-sm-4 fw-normal text-muted">Người đặt:</dt>
+                            <dd class="col-sm-8 fw-bold">@Model.BookerName (@Model.BookerEmail)</dd>
+                        </dl>
+                        <hr>
+                    }
+
+                    @if (Model.Tickets != null && Model.Tickets.Any())
+                    {
+                        <h5 class="text-primary mb-3"><i class="fas fa-ticket-alt me-2"></i>Chi tiết vé</h5>
+                        <div class="list-group list-group-flush">
+                            @foreach (var ticket in Model.Tickets)
+                            {
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">Hành khách: <span class="fw-bold">@ticket.PassengerName</span></h6>
+                                        <small class="text-danger fw-bold">@ticket.Price.ToString("N0") VNĐ</small>
+                                    </div>
+                                    <p class="mb-1 small">
+                                        Ghế: <span class="fw-bold">@ticket.SeatNumber</span> | Hạng: @ticket.Section
+                                    </p>
+                                </div>
+                            }
+                        </div>
+                        <hr>
+                    }
+
+
+                    <form asp-action="ProcessPayment" method="post">
+                        @Html.AntiForgeryToken()
+
+                        @* Hidden fields to post PaymentViewModel back *@
+                        <input type="hidden" asp-for="FlightInfo.FlightId" />
+                        <input type="hidden" asp-for="FlightInfo.FlightNumber" />
+                        <input type="hidden" asp-for="FlightInfo.AirlineName" />
+                        <input type="hidden" asp-for="FlightInfo.DepartureAirportName" />
+                        <input type="hidden" asp-for="FlightInfo.ArrivalAirportName" />
+                        <input type="hidden" asp-for="FlightInfo.DepartureTime" />
+                        <input type="hidden" asp-for="FlightInfo.ArrivalTime" />
+                        <input type="hidden" asp-for="Total" />
+                        <input type="hidden" asp-for="BookerName" />
+                        <input type="hidden" asp-for="BookerEmail" />
+
+                        @for (int i = 0; i < Model.Tickets.Count; i++)
+                        {
+                            <input type="hidden" asp-for="Tickets[i].PassengerName" />
+                            <input type="hidden" asp-for="Tickets[i].SeatNumber" />
+                            <input type="hidden" asp-for="Tickets[i].SeatId" /> @* IMPORTANT *@
+                            <input type="hidden" asp-for="Tickets[i].Price" />
+                            <input type="hidden" asp-for="Tickets[i].Section" />
+                        }
+
+                        @if (ViewContext.ModelState.Any(kvp => kvp.Value.Errors.Any()))
+                        {
+                            <div class="alert alert-danger">
+                                <ul class="mb-0">
+                                    @foreach (var error in ViewContext.ModelState.Values.SelectMany(v => v.Errors))
+                                    {
+                                        <li>@error.ErrorMessage</li>
+                                    }
+                                </ul>
+                            </div>
+                        }
+                        @if (TempData["ErrorMessage"] != null)
+                        {
+                            <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+                        }
+
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary btn-lg px-4">
+                                <i class="fas fa-times me-2"></i> Hủy bỏ
+                            </a>
+                            <button type="submit" class="btn btn-success btn-lg px-4">
+                                <i class="fas fa-check-circle me-2"></i> Xác nhận Thanh toán
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card-header h2, .card-header .lead {
+        margin-bottom: 0.5rem;
+    }
+
+    .card-body dt {
+        font-weight: 500;
+    }
+
+    .img-fluid {
+        object-fit: cover;
+    }
+
+    .list-group-item {
+        padding-left: 0;
+        padding-right: 0;
+    }
+</style>

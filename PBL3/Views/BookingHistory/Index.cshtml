@@ -41,7 +41,10 @@ else
                         <td class="text-end">@ticket.Price.ToString("N0")</td>
                         <td>
                             @if(ticket.Status == TicketStatus.Booked) { <span class="badge bg-success">Đã đặt</span>}
+                            else if(ticket.Status == TicketStatus.Pending_Book) { <span class="badge bg-info">Đợi xác nhận đặt</span>}
+                            else if(ticket.Status == TicketStatus.Pending_Cancel) { <span class="badge bg-warning">Đợi xác nhận hủy</span>}
                             else if(ticket.Status == TicketStatus.Cancelled) { <span class="badge bg-danger">Đã hủy</span>}
+                            else if(ticket.Status == TicketStatus.Completed) { <span class="badge bg-secondary">Đã sử dụng</span>}
                             else { <span class="badge bg-secondary">@ticket.Status</span>}
                         </td>
                          <td class="text-end">

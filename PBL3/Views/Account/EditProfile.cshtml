@@ -1,0 +1,90 @@
+﻿// Đổi tên file Views/Account/Edit.cshtml thành Views/Account/EditProfile.cshtml
+
+@model PBL3.Models.ViewModels.EditProfileViewModel // *** THAY ĐỔI MODEL ***
+@{
+    ViewData["Title"] = "Chỉnh sửa thông tin cá nhân";
+    // Layout = "_Layout"; // Layout mặc định thường được đặt trong _ViewStart
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Chỉnh sửa thông tin cá nhân</h4>
+                </div>
+                <div class="card-body">
+                    <form asp-controller="Account" asp-action="EditProfile" method="post">
+                        @* Hiển thị lỗi tổng hợp *@
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                        @* Email thường không cho sửa ở đây, chỉ hiển thị nếu cần.
+                           ViewModel EditProfileViewModel không có Email nên không cần hiển thị/input.*@
+
+                        <div class="mb-3">
+                            <label asp-for="FullName" class="form-label fw-bold"></label>
+                            <input asp-for="FullName" class="form-control" />
+                            <span asp-validation-for="FullName" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Age" class="form-label fw-bold"></label>
+                            <input asp-for="Age" class="form-control" type="number" />
+                            <span asp-validation-for="Age" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Address" class="form-label fw-bold"></label>
+                            <textarea asp-for="Address" class="form-control" rows="3"></textarea>
+                            <span asp-validation-for="Address" class="text-danger small"></span>
+                        </div>
+
+                        @* *** XÓA CÁC TRƯỜNG LIÊN QUAN ĐẾN ROLE *** *@
+                        @* <input type="hidden" id="originalRole" value="@Model.Role" /> *@
+                        @* <div class="form-group mb-3" style="display: none;"> ... </div> *@
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="submit" class="btn btn-primary me-md-2">
+                                <i class="fas fa-save me-1"></i> Lưu thay đổi
+                            </button>
+                            <a asp-controller="Account" asp-action="Profile" class="btn btn-secondary">
+                                <i class="fas fa-times me-1"></i> Hủy
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('editProfileForm');
+            const inputs = Array.from(form.querySelectorAll('input, textarea')); 
+
+            inputs.forEach((input, index) => {
+                input.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const nextInput = inputs[index + 1];
+                        if (nextInput) {
+                            nextInput.focus();
+                        }
+
+                        return false;
+                    }
+                });
+            });
+        });
+
+
+        function validateForm() {
+            return true;
+        }
+    </script>
+}

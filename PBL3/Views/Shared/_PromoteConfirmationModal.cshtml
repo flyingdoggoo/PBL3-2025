@@ -1,0 +1,33 @@
+﻿@model PBL3.Models.ViewModels.PromoteEmployeeViewModel
+
+<div class="modal fade" id="promoteConfirmModal" tabindex="-1" aria-labelledby="promoteConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="promoteConfirmForm" asp-action="PromoteEmployee" asp-controller="SystemManager" method="post">
+                @Html.AntiForgeryToken()
+                @* Hidden field to store the User ID to promote *@
+                <input type="hidden" asp-for="UserId" id="promoteUserId" />
+
+                <div class="modal-header">
+                    <h5 class="modal-title" id="promoteConfirmModalLabel">Confirm Promotion</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to promote this employee to an Administrator role?</p>
+                    <p class="text-danger">This action grants significant permissions.</p>
+                    <hr />
+                    <div class="mb-3">
+                        <label asp-for="AdminPassword" class="form-label"></label>
+                        <input asp-for="AdminPassword" type="password" class="form-control" required />
+                        <span asp-validation-for="AdminPassword" class="text-danger"></span>
+                    </div>
+                    <div id="promoteErrorMessage" class="alert alert-danger mt-2" style="display: none;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">Confirm Promotion</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

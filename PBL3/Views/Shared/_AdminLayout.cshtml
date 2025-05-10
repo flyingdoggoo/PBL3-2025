@@ -1,0 +1,179 @@
+﻿@* File: Views/Shared/_AdminLayout.cshtml (Cập nhật màu sắc) *@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Admin Panel</title>
+    @* Thêm Font Awesome nếu chưa có *@
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/PBL3.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" /> @* Giữ lại file CSS riêng *@
+
+    @* CSS nội tuyến cho layout này (hoặc chuyển vào admin.css) *@
+    <style>
+        body {
+            /* background-color: #f8f9fa; /* Màu nền nhẹ */
+            display: flex;
+            min-height: 100vh;
+            flex-direction: column;
+        }
+
+        .main-content {
+            flex: 1; /* Đẩy footer xuống dưới */
+            padding-top: 56px; /* Height of navbar */
+        }
+        /* Navbar tùy chỉnh */
+        .navbar-admin {
+            background: linear-gradient(90deg, #4e73df 10%, #224abe 100%); /* Gradient màu xanh */
+            /* background-color: #4e73df; */ /* Hoặc màu xanh dương đơn giản */
+            box-shadow: 0 .15rem 1.75rem 0 rgba(58,59,69,.15) !important;
+        }
+
+            .navbar-admin .navbar-brand {
+                font-weight: bold;
+                /* color: rgba(255,255,255,.8); */
+            }
+
+            .navbar-admin .nav-link {
+                color: rgba(255,255,255,.8);
+                transition: color 0.2s ease-in-out;
+            }
+
+                .navbar-admin .nav-link:hover,
+                .navbar-admin .nav-link.active { /* Thêm class active nếu cần */
+                    color: #fff;
+                }
+
+            .navbar-admin .navbar-toggler {
+                border-color: rgba(255,255,255,.1);
+            }
+
+            .navbar-admin .navbar-toggler-icon {
+                background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.55%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+            }
+
+        /* Footer tùy chỉnh */
+        .footer-admin {
+            background-color: #e3e6f0; /* Màu nền footer khác */
+            padding: 1rem 0;
+            font-size: 0.9em;
+            margin-top: auto; /* Đẩy footer xuống nếu nội dung ngắn */
+        }
+
+        /* Thêm style cho sidebar nếu bạn muốn layout 2 cột */
+        /*
+                #wrapper { display: flex; }
+                #sidebar-wrapper { ... }
+                #page-content-wrapper { flex: 1; padding-left: 250px; } // 250px là độ rộng sidebar
+                */
+
+    </style>
+
+</head>
+<body>
+    @* ID wrapper cho layout sidebar (tùy chọn) *@
+    @* <div id="wrapper"> *@
+
+    @* Thêm Sidebar nếu muốn *@
+    @* @await Html.PartialAsync("_AdminSidebarPartial") *@
+
+    @* Phần nội dung chính *@
+    @* <div id="page-content-wrapper"> *@
+
+    <header>
+        @* Thêm class navbar-admin, navbar-dark, bg-gradient-primary (hoặc màu bạn chọn), fixed-top *@
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-admin fixed-top border-bottom box-shadow">
+            <div class="container-fluid">
+                @* Button toggle sidebar (nếu có) *@
+                @* <button class="btn btn-primary d-md-none me-3" id="menu-toggle"><i class="fas fa-bars"></i></button> *@
+
+                <a class="navbar-brand text-white" asp-area="" asp-controller="SystemManager" asp-action="Index">
+                    <i class="fas fa-tachometer-alt me-1"></i> Admin Panel
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="SystemManager" asp-action="Index"><i class="fas fa-fw fa-tachometer-alt me-1"></i>Dashboard</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Flights" asp-action="Index"><i class="fas fa-fw fa-plane me-1"></i>Chuyến bay</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Employees" asp-action="Index"><i class="fas fa-fw fa-users-cog me-1"></i>Nhân viên</a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            @* Gom quản lý vé vào dropdown *@
+                            <a class="nav-link dropdown-toggle" href="#" id="bookingsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-fw fa-ticket-alt me-1"></i>Đặt vé
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="bookingsDropdown">
+                                <li><a class="dropdown-item" asp-controller="Bookings" asp-action="Index"><i class="fas fa-list-ul fa-fw me-2"></i>DS Đặt vé</a></li>
+                                <li><a class="dropdown-item" asp-controller="Bookings" asp-action="PendingCancellations"><i class="fas fa-hourglass-half fa-fw me-2"></i>DS Chờ hủy</a></li>
+                                @*<li><hr class="dropdown-divider"></li>
+                                         <li><a class="dropdown-item" href="#">Something else here</a></li>*@
+                            </ul>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Statistics" asp-action="Revenue"><i class="fas fa-fw fa-chart-line me-1"></i>Thống kê</a>
+                        </li>
+                    </ul>
+                    <ul class="navbar-nav">
+                        @if (User.Identity != null && User.Identity.IsAuthenticated)
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-user fa-fw me-1"></i> @User.Identity.Name
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end" aria-labelledby="userDropdown">
+                                    <li><a class="dropdown-item" asp-controller="Account" asp-action="Profile"><i class="fas fa-user-circle fa-fw me-2"></i>Hồ sơ</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Account" asp-action="ChangePassword"><i class="fas fa-key fa-fw me-2"></i>Đổi mật khẩu</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="dropdown-item"><i class="fas fa-sign-out-alt fa-fw me-2"></i>Đăng xuất</button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
+                        else { /* Xử lý nếu chưa đăng nhập (ít khi xảy ra với trang Admin) */ }
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    @* Thêm class main-content và container-fluid để nội dung chiếm full width *@
+    <div class="main-content container-fluid mt-4">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="footer-admin text-center">
+        @* Thêm class footer-admin *@
+        <div class="container">
+            Bản quyền © @DateTime.Now.Year - Quản lý Bán vé Máy bay - PBL3 Group
+        </div>
+    </footer>
+
+    @* </div> *@ @* Đóng #page-content-wrapper (nếu dùng sidebar) *@
+    @* </div> *@ @* Đóng #wrapper (nếu dùng sidebar) *@
+
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @* Thêm script cho sidebar toggle nếu có *@
+    @* <script> $("#menu-toggle").click(function(e) { e.preventDefault(); $("#wrapper").toggleClass("toggled"); }); </script> *@
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

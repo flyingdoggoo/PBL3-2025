@@ -1,0 +1,166 @@
+﻿@model PBL3.Models.ViewModels.FlightSearchViewModel
+@{
+    ViewData["Title"] = "Kết quả tìm kiếm";
+
+    // Tính toán khoảng ngày tìm kiếm
+    var departureStartDate = Model.DepartureDate.AddDays(-1);
+    var departureEndDate = Model.DepartureDate.AddDays(1);
+    var returnStartDate = Model.ReturnDate?.AddDays(-1);
+    var returnEndDate = Model.ReturnDate?.AddDays(1);
+}
+
+@if (Model == null)
+{
+    <div class="alert alert-danger">Model is null</div>
+    return;
+}
+<div class="container mt-4">
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Thông tin tìm kiếm</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Loại vé:</strong> @(Model.TripType == "roundtrip" ? "Khứ hồi" : "Một chiều")</p>
+                    <p><strong>Điểm khởi hành:</strong> @Model.Airports.FirstOrDefault(a => a.Value == Model.DepartureAirportId.ToString())?.Text</p>
+                    <p><strong>Điểm đến:</strong> @Model.Airports.FirstOrDefault(a => a.Value == Model.ArrivalAirportId.ToString())?.Text</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Ngày đi:</strong> @Model.DepartureDate.ToString("dd/MM/yyyy")</p>
+                    @if (Model.TripType == "roundtrip" && Model.ReturnDate.HasValue)
+                    {
+                        <p><strong>Ngày về:</strong> @Model.ReturnDate.Value.ToString("dd/MM/yyyy")</p>
+                    }
+                    <p><strong>Số hành khách:</strong> @Model.PassengerCount</p>
+                </div>
+            </div>
+            <div class="mt-2">
+                <a asp-action="Index" class="btn btn-outline-primary">Tìm kiếm lại</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chuyến bay đi -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Chuyến bay đi - @departureStartDate.ToString("dd/MM/yyyy") đến @departureEndDate.ToString("dd/MM/yyyy")</h5>
+        </div>
+        <div class="card-body">
+            @if (Model.OutboundFlights != null && Model.OutboundFlights.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Chuyến bay</th>
+                                <th>Ngày bay</th>
+                                <th>Khởi hành</th>
+                                <th>Đến</th>
+                                <th>Thời gian</th>
+                                <th>Giá vé</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var flight in Model.OutboundFlights)
+                            {
+                                <tr>
+                                    <td>@flight.FlightNumber</td>
+                                    <td>@flight.StartingTime.ToString("dd/MM/yyyy")</td>
+                                    <td>
+                                        <div>@flight.DepartureAirport.City (@flight.DepartureAirport.Code)</div>
+                                        <div>@flight.StartingTime.ToString("HH:mm")</div>
+                                    </td>
+                                    <td>
+                                        <div>@flight.ArrivalAirport.City (@flight.ArrivalAirport.Code)</div>
+                                        <div>@flight.ReachingTime.ToString("HH:mm")</div>
+                                    </td>
+                                    <td>
+                                        @{
+                                            var duration = flight.ReachingTime - flight.StartingTime;
+                                            @($"{duration.Hours}h {duration.Minutes}m")
+                                        }
+                                    </td>
+                                    <td>@flight.Price.ToString("N0") VND</td>
+                                    <td>
+                                        <a asp-controller="Booking" asp-action="StartBooking" asp-route-flightId="@flight.FlightId" asp-route-passengers="@Model.PassengerCount" class="btn btn-warning btn-sm fw-bold">Chọn</a> @* THÊM asp-route-passengers *@
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    Không tìm thấy chuyến bay nào phù hợp. Vui lòng thử lại với các tiêu chí khác.
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Chuyến bay về (nếu là khứ hồi) -->
+    @if (Model.TripType == "roundtrip" && Model.ReturnDate.HasValue)
+    {
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Chuyến bay về - @returnStartDate?.ToString("dd/MM/yyyy") đến @returnEndDate?.ToString("dd/MM/yyyy")</h5>
+            </div>
+            <div class="card-body">
+                @if (Model.ReturnFlights != null && Model.ReturnFlights.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Chuyến bay</th>
+                                    <th>Ngày bay</th>
+                                    <th>Khởi hành</th>
+                                    <th>Đến</th>
+                                    <th>Thời gian</th>
+                                    <th>Giá vé</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var flight in Model.ReturnFlights)
+                                {
+                                    <tr>
+                                        <td>@flight.FlightNumber</td>
+                                        <td>@flight.StartingTime.ToString("dd/MM/yyyy")</td>
+                                        <td>
+                                            <div>@flight.DepartureAirport.City (@flight.DepartureAirport.Code)</div>
+                                            <div>@flight.StartingTime.ToString("HH:mm")</div>
+                                        </td>
+                                        <td>
+                                            <div>@flight.ArrivalAirport.City (@flight.ArrivalAirport.Code)</div>
+                                            <div>@flight.ReachingTime.ToString("HH:mm")</div>
+                                        </td>
+                                        <td>
+                                            @{
+                                                var duration = flight.ReachingTime - flight.StartingTime;
+                                                @($"{duration.Hours}h {duration.Minutes}m")
+                                            }
+                                        </td>
+                                        <td>@flight.Price.ToString("N0") VND</td>
+                                        <td>
+                                            <a asp-controller="Booking" asp-action="StartBooking" asp-route-flightId="@flight.FlightId" asp-route-passengers="@Model.PassengerCount" class="btn btn-warning btn-sm fw-bold">Chọn</a> @* THÊM asp-route-passengers *@
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info">
+                        Không tìm thấy chuyến bay nào phù hợp. Vui lòng thử lại với các tiêu chí khác.
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>

@@ -1,8 +1,173 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@model PBL3.Models.ViewModels.FlightSearchViewModel
+@{
+    ViewData["Title"] = "Tìm kiếm chuyến bay";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-body">
+            <div class="mb-4">
+                <div class="btn-group w-100" role="group">
+                    <button type="button" class="btn @(Model.TripType == "roundtrip" ? "btn-primary" : "btn-outline-primary") trip-type-btn" data-trip-type="roundtrip">Khứ hồi</button>
+                    <button type="button" class="btn @(Model.TripType == "oneway" ? "btn-primary" : "btn-outline-primary") trip-type-btn" data-trip-type="oneway">Một chiều</button>
+                </div>
+            </div>
+
+            <form asp-action="Search" method="post" id="flightSearchForm">
+                <input type="hidden" asp-for="TripType" id="tripTypeInput" />
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label asp-for="DepartureAirportId" class="form-label">Từ</label>
+                        <select asp-for="DepartureAirportId" asp-items="Model.Airports" class="form-select" id="departureAirport">
+                            <option value="">-- Chọn điểm khởi hành --</option>
+                        </select>
+                        <span asp-validation-for="DepartureAirportId" class="text-danger"></span>
+                        <div id="departureError" class="text-danger" style="display: none;">Điểm đi và điểm đến không được trùng nhau</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="ArrivalAirportId" class="form-label">Đến</label>
+                        <select asp-for="ArrivalAirportId" asp-items="Model.Airports" class="form-select" id="arrivalAirport">
+                            <option value="">-- Chọn điểm đến --</option>
+                        </select>
+                        <span asp-validation-for="ArrivalAirportId" class="text-danger"></span>
+                        <div id="arrivalError" class="text-danger" style="display: none;">Điểm đi và điểm đến không được trùng nhau</div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label asp-for="DepartureDate" class="form-label">Ngày đi</label>
+                        <input asp-for="DepartureDate" class="form-control datepicker" type="text" readonly id="departureDate" value="@DateTime.Now.ToString("yyyy-dd-MM")" />
+                        <span asp-validation-for="DepartureDate" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6 return-date-container">
+                        <label asp-for="ReturnDate" class="form-label">Ngày về</label>
+                        <input asp-for="ReturnDate" class="form-control datepicker" type="text" readonly id="returnDate" />
+                        <span asp-validation-for="ReturnDate" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label asp-for="PassengerCount" class="form-label">Hành khách</label>
+                        <select asp-for="PassengerCount" class="form-select">
+                            @for (int i = 1; i <= 10; i++)
+                            {
+                                <option value="@i">@i Hành khách</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-warning btn-lg">TÌM CHUYẾN BAY</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/vn.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            // Xử lý khi click vào nút loại chuyến bay
+            $('.trip-type-btn').click(function () {
+                $('.trip-type-btn').removeClass('btn-primary').addClass('btn-outline-primary');
+                $(this).removeClass('btn-outline-primary').addClass('btn-primary');
+
+                var tripType = $(this).data('trip-type');
+                $('#tripTypeInput').val(tripType);
+
+                // Hiển thị/ẩn ngày về tùy theo loại chuyến bay
+                if (tripType === 'oneway') {
+                    $('.return-date-container').hide();
+                    $('#returnDate').val('');
+                } else {
+                    $('.return-date-container').show();
+                }
+            });
+
+            // Khởi tạo ban đầu
+            if ($('#tripTypeInput').val() === 'oneway') {
+                $('.return-date-container').hide();
+            }
+
+            // Kiểm tra điểm đi và điểm đến không được trùng nhau
+            function checkAirports() {
+                var departureId = $('#departureAirport').val();
+                var arrivalId = $('#arrivalAirport').val();
+
+                if (departureId && arrivalId && departureId === arrivalId) {
+                    $('#departureAirport, #arrivalAirport').addClass('is-invalid');
+                    $('#departureError, #arrivalError').show();
+                    return false;
+                } else {
+                    $('#departureAirport, #arrivalAirport').removeClass('is-invalid');
+                    $('#departureError, #arrivalError').hide();
+                    return true;
+                }
+            }
+
+            $('#departureAirport, #arrivalAirport').change(checkAirports);
+
+            // Cấu hình datepicker cho ngày đi
+            var today = new Date();
+
+            var departureDatePicker = flatpickr("#departureDate", {
+                dateFormat: "d/m/Y",
+                minDate: "today",
+                locale: "vn",
+                disableMobile: "true",
+                onChange: function(selectedDates, dateStr, instance) {
+                    // Cập nhật ngày tối thiểu cho ngày về
+                    if (selectedDates[0]) {
+                        returnDatePicker.set('minDate', selectedDates[0]);
+                    }
+                }
+            });
+
+            // Cấu hình datepicker cho ngày về
+            var returnDatePicker = flatpickr("#returnDate", {
+                dateFormat: "d/m/Y",
+                minDate: "today",
+                locale: "vn",
+                disableMobile: "true",
+                onChange: function(selectedDates, dateStr, instance) {
+                    // Cập nhật ngày tối đa cho ngày đi
+                    if (selectedDates[0]) {
+                        departureDatePicker.set('maxDate', selectedDates[0]);
+                    }
+                }
+            });
+
+            // Kiểm tra form trước khi submit
+            $('#flightSearchForm').submit(function(e) {
+                // Trước khi submit, chuyển định dạng ngày từ d/m/Y về yyyy-MM-dd
+
+                // Hàm convert ngày
+                function convertDateFormat(dateStr) {
+                    if (!dateStr) return "";
+                    var parts = dateStr.split('/');
+                    if (parts.length !== 3) return dateStr;
+                    return parts[2] + '-' + parts[1].padStart(2, '0') + '-' + parts[0].padStart(2, '0');
+                }
+
+                var departureDate = $('#departureDate').val();
+                var returnDate = $('#returnDate').val();
+
+                $('#departureDate').val(convertDateFormat(departureDate));
+                $('#returnDate').val(convertDateFormat(returnDate));
+                if (!checkAirports()) {
+                    e.preventDefault();
+                    return false;
+                }
+
+                return true;
+            });
+        });
+    </script>
+}

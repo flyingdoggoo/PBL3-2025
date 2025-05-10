@@ -1,0 +1,100 @@
+﻿@model PBL3.Models.ViewModels.FlightViewModel
+@{
+    ViewData["Title"] = "Chỉnh sửa thông tin chuyến bay";
+}
+
+<h1>@ViewData["Title"]</h1>
+<hr />
+<div class="row">
+    <div class="col-md-8">
+        <form asp-action="Edit">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            @* Dùng để lưu FlightId khi edit (không cần khi tạo mới) *@
+            <input type="hidden" asp-for="FlightId" />
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label asp-for="SelectedAirlinePrefix" class="control-label">Hãng bay</label>
+                    <select asp-for="SelectedAirlinePrefix" class="form-select">
+                        <option value="">-- Chọn hãng bay --</option>
+                        @foreach (var airline in Model.AirlinesList)
+                        {
+                            <option value="@airline.Value" selected="@(Model.SelectedAirlinePrefix == airline.Value)">@airline.Text</option> @* Selected để chọn hãng bay đang có *@
+                        }
+                    </select>
+                    <span asp-validation-for="SelectedAirlinePrefix" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="FlightNumberSuffix" class="control-label">Số hiệu (phần đuôi)</label>
+                    <input asp-for="FlightNumberSuffix" class="form-control" />
+                    <span asp-validation-for="FlightNumberSuffix" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label asp-for="StartingDestination" class="control-label">Điểm đi</label>
+                    <select asp-for="StartingDestination" class="form-select">
+                        <option value="">-- Chọn sân bay đi --</option>
+                        @foreach (var airport in Model.AirportsList)
+                        {
+                            <option value="@airport.Value" selected="@(Model.StartingDestination == int.Parse(airport.Value))">@airport.Text</option> @* Selected để chọn sân bay đang có *@
+                        }
+                    </select>
+                    <span asp-validation-for="StartingDestination" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="ReachingDestination" class="control-label">Điểm đến</label>
+                    <select asp-for="ReachingDestination" class="form-select">
+                        <option value="">-- Chọn sân bay đến --</option>
+                        @foreach (var airport in Model.AirportsList)
+                        {
+                            <option value="@airport.Value" selected="@(Model.ReachingDestination == int.Parse(airport.Value))">@airport.Text</option> @* Selected để chọn sân bay đang có *@
+                        }
+                    </select>
+                    <span asp-validation-for="ReachingDestination" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label asp-for="StartingTime" class="control-label">Thời gian khởi hành</label>
+                    <input asp-for="StartingTime" type="datetime-local" class="form-control" />
+                    <span asp-validation-for="StartingTime" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="ReachingTime" class="control-label">Thời gian đến</label>
+                    <input asp-for="ReachingTime" type="datetime-local" class="form-control" />
+                    <span asp-validation-for="ReachingTime" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label asp-for="Capacity" class="control-label">Sức chứa</label>
+                    <input asp-for="Capacity" type="number" class="form-control" />
+                    <span asp-validation-for="Capacity" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Price" class="control-label">Giá vé</label>
+                    <input asp-for="Price" type="number" step="1000" class="form-control" /> @* Bước nhảy 1000 (1k) *@
+                    <span asp-validation-for="Price" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="form-group mt-4">
+                <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+                <a asp-action="Index" class="btn btn-secondary">Quay lại danh sách</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        // Nếu dùng datepicker, hãy đảm bảo dùng thư viện và cấu hình nó
+    </script>
+}

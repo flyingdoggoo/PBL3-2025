@@ -1,0 +1,106 @@
+﻿@* File: Views/SystemManager/Index.cshtml (Cập nhật layout) *@
+@{
+    ViewData["Title"] = "Admin Dashboard";
+}
+
+<h1 class="display-6 mb-4 text-center">@ViewData["Title"]</h1> @* Căn giữa tiêu đề *@
+
+@await Html.PartialAsync("_StatusMessagePartial")
+
+@* row-cols-1: 1 cột trên màn hình nhỏ nhất (xs) *@
+@* row-cols-md-2: 2 cột trên màn hình vừa (md) trở lên *@
+@* justify-content-center: Căn giữa các cột nếu dòng cuối không đủ 2 cột *@
+@* mx-auto: Căn giữa cả cái row nếu muốn giới hạn chiều rộng *@
+@* w-lg-75: Ví dụ giới hạn chiều rộng còn 75% trên màn hình lớn (lg) *@
+<div class="row row-cols-1 row-cols-md-2 g-4 justify-content-center mx-auto" style="max-width: 900px;">
+    @* Thêm justify-content-center, mx-auto và max-width *@
+    <div class="col">
+        <div class="card h-100 shadow-sm border-primary text-center admin-card">
+            @* Thêm text-center và class admin-card *@
+            <div class="card-header bg-primary text-white fs-5"><i class="fas fa-plane-departure me-2"></i>Quản lý Chuyến bay</div>
+            <div class="card-body d-flex flex-column">
+                <p class="card-text small">Xem, thêm, sửa, xóa thông tin các chuyến bay trong hệ thống.</p>
+                <div class="mt-auto">
+                    <a asp-controller="Flights" asp-action="Index" class="btn btn-primary">
+                        @* Đổi thành btn-primary *@
+                        <i class="fas fa-arrow-right me-1"></i> Quản lý
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card h-100 shadow-sm border-success text-center admin-card">
+            <div class="card-header bg-success text-white fs-5"><i class="fas fa-users-cog me-2"></i>Quản lý Nhân viên</div>
+            <div class="card-body d-flex flex-column">
+                <p class="card-text small">Quản lý tài khoản, thông tin và phân quyền cho nhân viên.</p>
+                <div class="mt-auto">
+                    <a asp-controller="Employees" asp-action="Index" class="btn btn-success">
+                        @* Đổi thành btn-success *@
+                        <i class="fas fa-arrow-right me-1"></i> Quản lý
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card h-100 shadow-sm border-warning text-center admin-card">
+            <div class="card-header bg-warning text-dark fs-5"><i class="fas fa-ticket-alt me-2"></i>Quản lý Đặt vé</div>
+            <div class="card-body d-flex flex-column">
+                <p class="card-text small">Xem và quản lý các vé máy bay đã được hành khách đặt.</p>
+                <div class="mt-auto">
+                    <a asp-controller="Bookings" asp-action="Index" class="btn btn-warning text-dark">@* Đổi thành btn-warning *@
+                        <i class="fas fa-arrow-right me-1"></i> Quản lý
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card h-100 shadow-sm border-info text-center admin-card">
+            <div class="card-header bg-info text-white fs-5"><i class="fas fa-chart-line me-2"></i>Thống kê & Báo cáo</div>
+            <div class="card-body d-flex flex-column">
+                <p class="card-text small">Xem báo cáo doanh thu, số lượng vé và các chỉ số quan trọng khác.</p>
+                <div class="mt-auto">
+                    <a asp-controller="Statistics" asp-action="Revenue" class="btn btn-info">@* Đổi thành btn-info *@
+                        <i class="fas fa-arrow-right me-1"></i> Xem báo cáo
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card h-100 shadow-sm border-secondary text-center admin-card">
+            <div class="card-header bg-secondary text-white fs-5"><i class="fas fa-cog me-2"></i>Yêu cầu Chờ hủy</div> @* Thêm Card mới *@
+            <div class="card-body d-flex flex-column">
+                <p class="card-text small">Xem và xử lý các yêu cầu hủy vé từ khách hàng.</p>
+                <div class="mt-auto">
+                    <a asp-controller="Bookings" asp-action="PendingCancellations" class="btn btn-secondary">
+                        <i class="fas fa-arrow-right me-1"></i> Đi đến
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    @* Thêm các card khác nếu cần *@
+</div>
+
+@* CSS tùy chỉnh cho card Admin (có thể đặt trong admin.css) *@
+<style>
+    .admin-card {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    }
+
+        .admin-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+        }
+
+        .admin-card .card-header i {
+            font-size: 1.1em; /* Icon to hơn chút */
+        }
+
+        .admin-card .btn {
+            min-width: 120px; /* Đảm bảo nút có độ rộng tối thiểu */
+        }
+</style>

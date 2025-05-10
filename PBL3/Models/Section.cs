@@ -1,31 +1,39 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Collections.Generic; // Cho ICollection
 
 namespace PBL3.Models
 {
     public class Section
     {
         [Key]
-        public int SectionId { get; set; } // Đổi từ String sang int
+        public int SectionId { get; set; }
 
         [Required]
         [StringLength(50)]
-        public string SectionName { get; set; } // Ví dụ: "Economy", "Business", "First Class" (thay thế SectionA/B/C)
+        [Display(Name = "Tên khu vực")]
+        public string SectionName { get; set; } // Ví dụ: "Thương gia", "Phổ thông"
 
-        [Range(1, 500)]
-        public int Capacity { get; set; } // Sức chứa của khu vực này
-
-        // --- Khóa ngoại (Foreign Keys) ---
         [Required]
-        public int FlightId { get; set; } // Khóa ngoại tham chiếu đến Flight
+        [Range(1, 500)]
+        [Display(Name = "Sức chứa khu vực")]
+        public int Capacity { get; set; }
 
-        // --- Thuộc tính điều hướng (Navigation Properties) ---
+        // Hệ số nhân giá cho khu vực này so với giá cơ sở của chuyến bay
+        [Required]
+        [Range(0.1, 10.0)] // Ví dụ: 1.0 cho Phổ thông, 1.8-2.5 cho Thương gia
+        [Column(TypeName = "decimal(5,2)")] // Cho phép lưu số thập phân như 1.80
+        [Display(Name = "Hệ số giá")]
+        public decimal PriceMultiplier { get; set; } = 1.0m; // Mặc định là 1.0
 
-        // Một Section thuộc về một Flight (Mối quan hệ nhiều-một)
-        [ForeignKey("FlightId")] // Chỉ rõ ràng khóa ngoại cho thuộc tính điều hướng bên dưới
-        public virtual Flight Flight { get; set; }
+        [Required]
+        public int FlightId { get; set; }
 
-        // Một Section có thể có nhiều vé được đặt trong đó (Mối quan hệ một-nhiều, tùy chọn)
-        // public virtual ICollection<Ticket> TicketsInSection { get; set; } = new List<Ticket>();
+        [ForeignKey("FlightId")]
+        public virtual Flight? Flight { get; set; }
+
+        // Quan hệ một-nhiều với Seat (nếu bạn muốn quản lý từng ghế riêng)
+        // Hoặc bạn có thể không cần DbSet<Seat> nếu chỉ quản lý số lượng
+        public virtual ICollection<Seat> Seats { get; set; } = new List<Seat>(); // Thêm Seats
     }
 }

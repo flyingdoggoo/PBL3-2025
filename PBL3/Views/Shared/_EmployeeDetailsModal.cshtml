@@ -1,0 +1,73 @@
+﻿@model PBL3.Models.AppUser
+@* ViewBag.Roles is expected to contain IEnumerable<string> of roles *@
+
+<div class="modal fade" id="employeeDetailsModal" tabindex="-1" aria-labelledby="employeeDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        @* Make modal wider if needed *@
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="employeeDetailsModalLabel">Employee Details - @Model.FullName</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <dl class="row">
+                    <dt class="col-sm-3">Full Name</dt>
+                    <dd class="col-sm-9">@Html.DisplayFor(model => model.FullName)</dd>
+
+                    <dt class="col-sm-3">Email</dt>
+                    <dd class="col-sm-9">@Html.DisplayFor(model => model.Email)</dd>
+
+                    <dt class="col-sm-3">Username</dt>
+                    <dd class="col-sm-9">@Html.DisplayFor(model => model.UserName)</dd>
+
+                    <dt class="col-sm-3">Age</dt>
+                    <dd class="col-sm-9">@Html.DisplayFor(model => model.Age)</dd>
+
+                    <dt class="col-sm-3">Address</dt>
+                    <dd class="col-sm-9">@Html.DisplayFor(model => model.Address)</dd>
+
+                    <dt class="col-sm-3">Roles</dt>
+                    <dd class="col-sm-9">
+                        @if (ViewBag.Roles != null)
+                        {
+                            @string.Join(", ", (IEnumerable<string>)ViewBag.Roles)
+                        }
+                        else
+                        {
+                            <span class="text-muted">Could not load roles.</span>
+                        }
+                    </dd>
+
+                    @* Display AddedDate if user is actually an Employee instance *@
+                    @if (Model is PBL3.Models.Employee employee)
+                    {
+                        <dt class="col-sm-3">Added Date</dt>
+                        <dd class="col-sm-9">@employee.AddedDate.ToString("g")</dd>
+                        // Adjust format as needed
+                    }
+
+                    @* Add other relevant details here *@
+
+                </dl>
+            </div>
+            <div class="modal-footer">
+                @* Show Promote button ONLY if user is NOT already an Admin *@
+                @if (ViewBag.Roles != null && !((IEnumerable<string>)ViewBag.Roles).Contains("Admin"))
+                {
+                    <button type="button" class="btn btn-success" id="btnShowPromoteConfirm" data-userid="@Model.Id">
+                        <i class="fas fa-user-shield"></i> Promote to Admin
+                    </button>
+                }
+                else if (ViewBag.Roles != null && ((IEnumerable<string>)ViewBag.Roles).Contains("Admin"))
+                {
+                    <span class="text-info">User is already an Administrator</span>
+                }
+
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* Nested Modal for Promotion Confirmation (Loaded into placeholder on Index page) *@
+@await Html.PartialAsync("_PromoteConfirmationModal", new PBL3.Models.ViewModels.PromoteEmployeeViewModel { UserId = Model.Id })

@@ -1,48 +1,55 @@
-﻿using System;
+﻿// File: Models/Ticket.cs (Sửa đổi)
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PBL3.Models
 {
+    public enum TicketStatus
+    {
+        Pending_Book,
+        Booked,
+        Pending_Cancel,
+        Cancelled,
+        Completed
+    }
     public class Ticket
     {
         [Key]
         public int TicketId { get; set; }
 
-        [Required(ErrorMessage = "Vé phải thuộc về một hành khách.")]
-        public string PassengerId { get; set; } // FK đến AppUser.Id (string)
-
-        [Required(ErrorMessage = "Vé phải thuộc về một chuyến bay.")]
-        public int FlightId { get; set; } // FK đến Flight.FlightId (int)
-
-        public int? SectionId { get; set; } // FK đến Section.Id (int), nullable
-        public string? BookingEmployeeId { get; set; } // FK đến AppUser.Id (string), nullable
-
-        [Required(ErrorMessage = "Vui lòng nhập giá vé.")]
-        [Column(TypeName = "decimal(18,2)")]
-        [Range(0.01, (double)decimal.MaxValue)]
-        [Display(Name = "Giá vé thực trả")]
-        public decimal Price { get; set; }
-
-        [StringLength(10)]
-        [Display(Name = "Số ghế")]
-        public string? SeatNumber { get; set; } // Cho phép null
+        [Required]
+        public string PassengerId { get; set; } // FK đến AppUser.Id
 
         [Required]
-        [Display(Name = "Thời gian đặt")]
-        public DateTime OrderTime { get; set; } = DateTime.UtcNow; // Giá trị mặc định
+        public int FlightId { get; set; } // FK đến Flight.FlightId
 
-        [Required(ErrorMessage = "Trạng thái vé là bắt buộc.")]
+        [Required(ErrorMessage = "Phải chọn một ghế cho vé.")] // **Quan trọng: Vé phải có ghế**
+        public int SeatId { get; set; } // **THAY THẾ SeatNumber bằng SeatId (FK)**
+
+        public int? SectionId { get; set; } // Có thể giữ hoặc bỏ nếu Seat đã có SectionId
+        public string? BookingEmployeeId { get; set; }
+
+        [Required]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal Price { get; set; }
+
+        [Required]
+        public DateTime OrderTime { get; set; } = DateTime.UtcNow;
+
+        [Required]
         [StringLength(20)]
-        [Display(Name = "Trạng thái")]
-        public string Status { get; set; } = "Booked"; // Giá trị mặc định
+        public TicketStatus Status { get; set; } = TicketStatus.Pending_Book;
 
         // --- Navigation Properties ---
         [ForeignKey("PassengerId")]
-        public virtual Passenger? Passenger { get; set; } // Nên là Passenger thay vì AppUser
+        public virtual Passenger? Passenger { get; set; }
 
         [ForeignKey("FlightId")]
         public virtual Flight? Flight { get; set; }
+
+        [ForeignKey("SeatId")] // **Thêm ForeignKey cho Seat**
+        public virtual Seat? Seat { get; set; } // **Thêm Navigation Property đến Seat**
 
         [ForeignKey("SectionId")]
         public virtual Section? Section { get; set; }

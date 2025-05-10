@@ -84,7 +84,7 @@
                                     </td>
                                     <td>@flight.Price.ToString("N0") VND</td>
                                     <td>
-                                        <a href="#" class="btn btn-primary btn-sm">Chọn</a>
+                                        <a asp-controller="Booking" asp-action="StartBooking" asp-route-flightId="@flight.FlightId" asp-route-passengers="@Model.PassengerCount" class="btn btn-warning btn-sm fw-bold">Chọn</a> @* THÊM asp-route-passengers *@
                                     </td>
                                 </tr>
                             }
@@ -146,7 +146,7 @@
                                         </td>
                                         <td>@flight.Price.ToString("N0") VND</td>
                                         <td>
-                                            <a href="#" class="btn btn-primary btn-sm">Chọn</a>
+                                            <a asp-controller="Booking" asp-action="StartBooking" asp-route-flightId="@flight.FlightId" asp-route-passengers="@Model.PassengerCount" class="btn btn-warning btn-sm fw-bold">Chọn</a> @* THÊM asp-route-passengers *@
                                         </td>
                                     </tr>
                                 }

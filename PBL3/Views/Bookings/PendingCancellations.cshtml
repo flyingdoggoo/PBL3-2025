@@ -1,0 +1,88 @@
+﻿@model PBL3.Utils.PaginatedList<PBL3.Models.Ticket>
+@using PBL3.Utils
+@{
+    ViewData["Title"] = "Yêu cầu Hủy vé Chờ Xác nhận";
+}
+
+<h1>@ViewData["Title"]</h1>
+<hr />
+@await Html.PartialAsync("_StatusMessagePartial")
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">Hiện không có yêu cầu hủy vé nào đang chờ xử lý.</div>
+    <a asp-controller="Bookings" asp-action="Index" class="btn btn-primary">
+         <i class="fas fa-list me-1"></i> Quay lại Quản lý Vé
+    </a>
+}
+else
+{
+    <p>Tổng cộng: @Model.TotalCount yêu cầu.</p>
+    <div class="table-responsive">
+        <table class="table table-hover table-striped align-middle">
+             <thead class="table-light small text-uppercase">
+                <tr>
+                    <th>Mã vé</th>
+                    <th>Hành khách</th>
+                    <th>Chuyến bay</th>
+                    <th>Ngày đi</th>
+                    <th>Thời gian Y/C</th>
+                    <th class="text-center">Hành động</th>
+                </tr>
+             </thead>
+             <tbody>
+                @foreach (var ticket in Model)
+                {
+                    <tr>
+                        <td>@ticket.TicketId</td>
+                        <td>
+                            @ticket.Passenger?.FullName <br/>
+                            <small class="text-muted">@ticket.Passenger?.Email</small>
+                        </td>
+                        <td>
+                            @ticket.Flight?.FlightNumber <br/>
+                            <small class="text-muted">@ticket.Flight?.DepartureAirport?.Code → @ticket.Flight?.ArrivalAirport?.Code</small>
+                        </td>
+                        <td>@ticket.Flight?.StartingTime.ToString("dd/MM/yy HH:mm")</td>
+                        <td>@ticket.OrderTime.ToString("dd/MM/yy HH:mm")</td>
+                        <td class="text-center">
+                            <div class="btn-group">
+                                <a asp-action="ConfirmCancel" asp-route-id="@ticket.TicketId" class="btn btn-outline-danger" title="Xem và Xác nhận Hủy">
+                                     <i class="fas fa-check me-1"></i> Duyệt Hủy
+                                </a>
+                                 <a asp-action="Details" asp-route-id="@ticket.TicketId" class="btn btn-outline-info" title="Xem chi tiết vé">
+                                    <i class="fas fa-info-circle me-1"></i> Chi tiết
+                                 </a>
+                                  <form asp-action="RejectCancel" asp-route-id="@ticket.TicketId" method="post" class="d-inline-block" onsubmit="return confirm('Từ chối yêu cầu hủy vé này?');">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-outline-warning" title="Từ chối Hủy">
+                                             <i class="fas fa-times me-1"></i> Từ chối
+                                        </button>
+                                  </form>
+                             </div>
+                        </td>
+                    </tr>
+                }
+             </tbody>
+        </table>
+    </div>
+
+    @* Phân trang *@
+    @* --- XÓA @{ Ở ĐÂY --- *@
+        var prevDisabled = !Model.HasPreviousPage ? "disabled" : "";
+        var nextDisabled = !Model.HasNextPage ? "disabled" : "";
+    @* --- XÓA } Ở ĐÂY --- *@
+    <nav aria-label="Pending cancellation page navigation" class="mt-3">
+         <div class="d-flex justify-content-between align-items-center">
+             <small class="text-muted">Trang @Model.PageIndex / @Model.TotalPages (Tổng số: @Model.TotalCount yêu cầu)</small>
+             <ul class="pagination pagination-sm mb-0">
+                <li class="page-item @prevDisabled">
+                  <a class="page-link" asp-action="PendingCancellations" asp-route-pageNumber="@(Model.PageIndex - 1)">Trước</a>
+                </li>
+                <li class="page-item @nextDisabled">
+                  <a class="page-link" asp-action="PendingCancellations" asp-route-pageNumber="@(Model.PageIndex + 1)">Sau</a>
+                </li>
+              </ul>
+          </div>
+    </nav>
+} 

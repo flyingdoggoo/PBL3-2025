@@ -29,8 +29,8 @@ namespace PBL3.Data // Hoặc namespace bạn muốn
             }
 
             // --- 2. Tạo tài khoản Admin mặc định ---
-            string adminEmail = "admin@yourapp.com"; // Đặt email admin của bạn
-            string adminPassword = "Password123!";   // Đặt mật khẩu mạnh!
+            string adminEmail = "admin@gmail.com"; // Đặt email admin của bạn
+            string adminPassword = "123456";   // Đặt mật khẩu mạnh!
 
             // Kiểm tra xem admin user đã tồn tại chưa
             var adminUser = await userManager.FindByEmailAsync(adminEmail);

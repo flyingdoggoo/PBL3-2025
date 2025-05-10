@@ -81,15 +81,15 @@
                         {
                             <span class="text-muted">N/A</span>
                         }</td>
-                    <td>@Html.DisplayFor(modelItem => item.SeatNumber)</td>
+                    <td>@Html.DisplayFor(modelItem => item.SeatId)</td>
                     <td>@item.OrderTime.ToString("dd/MM/yy HH:mm")</td>
                     <td class="text-end">@item.Price.ToString("N0")</td>
                     <td>
-                        @if (item.Status == "Booked")
+                        @if (item.Status == TicketStatus.Booked)
                         {
                             <span class="badge bg-success">Đã đặt</span>
                         }
-                        else if (item.Status == "Cancelled")
+                        else if (item.Status == TicketStatus.Cancelled)
                         {
                             <span class="badge bg-danger">Đã hủy</span>
                         }
@@ -98,14 +98,20 @@
                             <span class="badge bg-secondary">@item.Status</span>
                         }
                     </td>
-                    <td>
-                        <div class="btn-group btn-group-sm" role="group">
-                            <a asp-action="Details" asp-route-id="@item.TicketId" class="btn btn-outline-info" title="Chi tiết"><i class="fas fa-info-circle"></i></a>
-                            @if (item.Status == "Booked") @* Chỉ hiện nút hủy nếu chưa hủy *@
-                            {
-                                <a asp-action="Cancel" asp-route-id="@item.TicketId" class="btn btn-outline-danger" title="Hủy vé"><i class="fas fa-ban"></i></a>
-                            }
-                        </div>
+                    <td class="text-center">
+                        <a asp-action="Details" asp-route-id="@item.TicketId" class="btn btn-outline-info me-1" title="Xem Chi tiết">
+                            <i class="fas fa-info-circle me-1"></i> Chi tiết
+                        </a>
+                        @if (item.Status == TicketStatus.Booked)
+                        {
+                            @* Admin không nên hủy trực tiếp ở đây nếu theo luồng yêu cầu *@
+                        }
+                        else if (item.Status == TicketStatus.Pending_Cancel)
+                        {
+                            <a asp-action="ConfirmCancel" asp-route-id="@item.TicketId" class="btn btn-outline-danger" title="Xác nhận Hủy">
+                                <i class="fas fa-check me-1"></i> Duyệt Hủy
+                            </a>
+                        }
                     </td>
                 </tr>
             }

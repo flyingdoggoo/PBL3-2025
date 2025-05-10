@@ -50,6 +50,10 @@ namespace PBL3.Models.ViewModels
         public List<SelectListItem> AirportsList { get; set; } = new List<SelectListItem>();
 
         // Constructor (không bắt buộc, nhưng có thể dùng để khởi tạo list)
+
+        [Display(Name = "Tự động tạo Khu vực Ghế (Thương gia & Phổ thông)")]
+        public bool CreateSections { get; set; } = true;
+
         public FlightViewModel()
         {
             AirlinesList = new List<SelectListItem>();

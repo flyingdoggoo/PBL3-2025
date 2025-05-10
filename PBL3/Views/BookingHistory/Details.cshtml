@@ -1,0 +1,91 @@
+﻿@* File: Views/BookingHistory/Details.cshtml *@
+@model PBL3.Models.Ticket
+@{
+    ViewData["Title"] = $"Chi tiết Vé #{Model?.TicketId}";
+}
+
+<h1 class="display-6 mb-3">@ViewData["Title"]</h1>
+@await Html.PartialAsync("_StatusMessagePartial")
+
+
+@if (Model != null)
+{
+    <div class="card shadow-sm mt-4">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+            <span><i class="fas fa-ticket-alt me-2"></i>Thông tin vé</span>
+            @if (Model.Status == TicketStatus.Booked && Model.Flight?.StartingTime > DateTime.Now.AddHours(24))
+            {
+                <a asp-action="CancelRequest" asp-route-id="@Model.TicketId" class="btn btn-sm btn-danger">
+                    <i class="fas fa-ban me-1"></i> Yêu cầu Hủy vé này
+                </a>
+            }
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Thông tin Hành khách</h5>
+                    @if (Model.Passenger != null) { /* ... Hiển thị thông tin Passenger ... */ }
+                    else
+                    {
+                        <p class="text-muted">Không có thông tin.</p>
+                    }
+                </div>
+                <div class="col-md-6">
+                    <h5>Thông tin Chuyến bay</h5>
+                    @if (Model.Flight != null) { /* ... Hiển thị thông tin Flight ... */ }
+                    else
+                    {
+                        <p class="text-muted">Không có thông tin.</p>
+                    }
+                </div>
+            </div>
+            <hr />
+            <h5>Chi tiết vé</h5>
+            <dl class="row">
+                <dt class="col-sm-3">Mã vé:</dt>
+                <dd class="col-sm-9">@Model.TicketId</dd>
+                <dt class="col-sm-3">Số ghế:</dt>
+                <dd class="col-sm-9">@(Model.Seat?.SeatNumber ?? "Chưa gán")</dd>
+                <dt class="col-sm-3">Giá vé:</dt>
+                <dd class="col-sm-9 fw-bold">@Model.Price.ToString("N0") VNĐ</dd>
+                <dt class="col-sm-3">Thời gian đặt:</dt>
+                <dd class="col-sm-9">@Model.OrderTime.ToString("dd/MM/yyyy HH:mm:ss")</dd>
+                <dt class="col-sm-3">Trạng thái:</dt>
+                <dd class="col-sm-9">
+                    @if (Model.Status == TicketStatus.Booked)
+                    {
+                        <span class="badge bg-success fs-6">Đã đặt</span>
+                    }
+                    else if (Model.Status == TicketStatus.Pending_Book)
+                    {
+                        <span class="badge bg-info text-dark fs-6">Chờ xác nhận</span>
+                    }
+                    else if (Model.Status == TicketStatus.Pending_Cancel)
+                    {
+                        <span class="badge bg-warning text-dark fs-6">Chờ hủy</span>
+                    }
+                    else if (Model.Status == TicketStatus.Cancelled)
+                    {
+                        <span class="badge bg-danger fs-6">Đã hủy</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary fs-6">@Model.Status</span>
+                    }
+                </dd>
+            </dl>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Quay lại Lịch sử
+        </a>
+    </div>
+
+}
+else
+{
+    <div class="alert alert-warning">Không tìm thấy thông tin vé.</div>
+    <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Về trang chủ</a>
+}

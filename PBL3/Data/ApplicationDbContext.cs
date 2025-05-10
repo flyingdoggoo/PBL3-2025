@@ -16,7 +16,7 @@ namespace PBL3.Data
         public DbSet<Flight> Flights { get; set; }
         public DbSet<Airport> Airports { get; set; }
         public DbSet<Section> Sections { get; set; } // Thêm nếu có Section
-
+        public DbSet<Seat> Seats { get; set; }
         // Không cần DbSet cho Employee, Passenger, SystemManager vì chúng dùng TPH
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -44,8 +44,10 @@ namespace PBL3.Data
                 .HasColumnType("decimal(18,2)");
 
             modelBuilder.Entity<Ticket>()
-                .Property(t => t.Price)
-                .HasColumnType("decimal(18,2)");
+                .HasOne(t => t.Seat) // Ticket có một Seat
+                .WithOne() // Một Seat chỉ liên kết với một Ticket tại một thời điểm (hoặc dùng WithMany nếu cần)
+                .HasForeignKey<Ticket>(t => t.SeatId) // Khóa ngoại là Ticket.SeatId
+                .OnDelete(DeleteBehavior.Restrict);
 
             // Bỏ cấu hình ToTable() cho các lớp kế thừa từ AppUser
         }

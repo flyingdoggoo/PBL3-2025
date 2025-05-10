@@ -10,8 +10,10 @@ var builder = WebApplication.CreateBuilder(args);
 // --- Cấu hình Services ---
 builder.Services.AddControllersWithViews();
 
-var connectionString = builder.Configuration.GetConnectionString("TienConnection")
+var connectionString = builder.Configuration.GetConnectionString("KienConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+//var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+//    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 

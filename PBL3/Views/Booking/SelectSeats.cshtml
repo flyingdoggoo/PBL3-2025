@@ -1,16 +1,22 @@
-﻿@* File: Views/Booking/SelectSeats.cshtml (Cập nhật phần sơ đồ ghế) *@
+﻿@* File: Views/Booking/SelectSeats.cshtml (Cập nhật toàn bộ) *@
 @model PBL3.Models.ViewModels.BookingViewModel
-@using System.Linq;
+@using System.Globalization
 @{
     ViewData["Title"] = "Chọn chỗ ngồi & Nhập thông tin";
-    var seatsByRow = Model.AvailableSeats.GroupBy(s => s.Row).OrderBy(g => g.Key);
-    int passengerCount = Model.Passengers.Count;
+    int passengerCount = Model.Passengers?.Count ?? 0;
 
-    // Xác định các cột có trong layout này (dựa trên ảnh)
-    // Lưu ý: Cần cách linh hoạt hơn nếu có nhiều loại máy bay
-    var businessColumns = new[] { "A", "C", "", "D", "G", "", "H", "K" }; // Layout 2-2-2 (Giả định)
-    var economyColumns = new[] { "A", "B", "C", "", "D", "E", "F", "", "G", "H", "K" }; // Layout 3-3-3
-    int firstEconomyRow = 5; // Hàng bắt đầu của hạng Phổ thông (dựa vào ảnh)
+    // Xác định các cột ghế (có thể làm linh hoạt hơn nếu có nhiều loại máy bay)
+    // Giả sử layout phổ biến, bạn cần logic để xác định layout dựa trên Model.FlightInfo.AircraftType chẳng hạn
+    var businessColumns = new[] { "A", "C", "", "D", "F" }; // Ví dụ layout 2-2 Thương gia
+    var economyColumns = new[] { "A", "B", "C", "", "D", "E", "F" }; // Ví dụ layout 3-3 Phổ thông
+
+    // Tìm hàng đầu tiên của Economy dựa trên Sections (nếu có)
+    // Đây là cách giả định đơn giản, bạn có thể cần logic phức tạp hơn
+    int firstEconomyRow = Model.FlightSections.Any(s => s.Name.Contains("Thương gia")) ? 6 : 1; // Giả sử TG từ hàng 1-5
+    if (Model.FlightSections.Any(s => s.Name.Contains("Phổ thông")) && !Model.FlightSections.Any(s => s.Name.Contains("Thương gia")))
+    {
+        firstEconomyRow = 1; // Nếu chỉ có phổ thông
+    }
 }
 
 <h1 class="display-6 mb-3">@ViewData["Title"]</h1>
@@ -22,164 +28,166 @@
     <input type="hidden" asp-for="FlightId" />
 
     <div class="row">
-        @* --- CỘT BÊN TRÁI: SƠ ĐỒ CHỖ NGỒI (Cập nhật) --- *@
+        @* --- CỘT BÊN TRÁI: SƠ ĐỒ CHỖ NGỒI --- *@
         <div class="col-lg-7 col-md-12 mb-4">
             <div class="card shadow-sm">
-                <div class="card-header bg-light">
-                    <i class="fas fa-th me-2"></i> Sơ đồ Chỗ ngồi - Chuyến bay @Model.FlightInfo?.FlightNumber
-                    <span class="float-end small text-muted">Cần chọn: <strong id="seatsNeeded" class="text-danger">@passengerCount</strong> ghế</span>
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-th me-2"></i> Sơ đồ Chỗ ngồi - Chuyến bay @Model.FlightInfo?.FlightNumber</span>
+                    <span class="small text-muted">Cần chọn: <strong id="seatsNeededDisplay" class="text-danger">@passengerCount</strong> ghế</span>
                 </div>
                 <div class="card-body overflow-auto" style="max-height: 600px;">
-                    <div class="seat-map-container mx-auto" style="max-width: 550px;">
-                        @* Tăng chiều rộng *@
-
+                    <div class="seat-map-container mx-auto" style="max-width: 580px;">
                         <div class="d-flex justify-content-around flex-wrap mb-3 small border-bottom pb-2">
-                            <span><span class="seat-example seat-color-economy"></span> Trống (Phổ thông)</span>
-                            <span><span class="seat-example seat-color-business"></span> Trống (Thương gia)</span>
+                            @foreach (var sectionInfo in Model.FlightSections.OrderBy(s => s.Name == "Thương gia" ? 0 : 1))
+                            {
+                                string colorClass = sectionInfo.Name.Contains("Thương gia") ? "seat-color-business available" : "seat-color-economy available";
+                                <span><span class="seat-example @colorClass"></span> Trống (@sectionInfo.Name)</span>
+                            }
                             <span><span class="seat-example seat-color-booked"></span> Đã đặt</span>
-                            <span><span class="seat-example selected"></span> Đang chọn</span>
-                            <span class="text-muted"><i class="fas fa-male me-1"></i> Lối đi</span> @* Chỉ Icon *@
-                            <span class="text-danger"><i class="fas fa-door-closed me-1"></i> Cửa thoát hiểm</span> @* Chỉ Icon với màu text *@
-                            <span class="text-info"><i class="fas fa-restroom me-1"></i> WC</span> @* Chỉ Icon với màu text *@
+                            <span><span class="seat-example seat selected seat-color-economy"></span> Đang chọn</span>
                         </div>
 
-                        @* Vẽ sơ đồ ghế - Logic mới *@
-                        @foreach (var rowGroup in seatsByRow)
+                        @if (Model.SeatsLayout != null && Model.SeatsLayout.Any())
                         {
-                            int currentRow = rowGroup.Key;
-                            // Chọn layout cột dựa trên số hàng
-                            var columnsToRender = (currentRow < firstEconomyRow) ? businessColumns : economyColumns;
-                            var seatsInRow = rowGroup.ToList();
+                            var seatsByRow = Model.SeatsLayout.GroupBy(s => s.Row).OrderBy(g => g.Key);
+                            foreach (var rowGroup in seatsByRow)
+                            {
+                                int currentRow = rowGroup.Key;
+                                var columnsToRender = (rowGroup.First().SectionName.Contains("Thương gia")) ? businessColumns : economyColumns;
+                                var seatsInCurrentRow = rowGroup.ToList();
 
-                            <div class="seat-row d-flex justify-content-center align-items-center mb-1">
-                                <div class="row-number text-muted fw-bold me-2" style="width: 25px;">@currentRow</div>
-
-                                @foreach (var col in columnsToRender)
-                                {
-                                    if (string.IsNullOrEmpty(col)) // Lối đi
+                                <div class="seat-row d-flex justify-content-center align-items-center mb-1">
+                                    <div class="row-number text-muted fw-bold me-2" style="width: 25px;">@currentRow</div>
+                                    @foreach (var col in columnsToRender)
                                     {
-                                        <div class="seat-aisle d-flex align-items-center justify-content-center" style="width: 30px;">
-                                            <i class="fas fa-male text-muted small"></i>
-                                        </div>
-                                    }
-                                    else // Ghế hoặc ô trống
-                                    {
-                                        var seat = seatsInRow.FirstOrDefault(s => s.Column == col);
-                                        if (seat != null)
+                                        if (string.IsNullOrEmpty(col)) // Lối đi
                                         {
-                                            // Xác định class và trạng thái (như code cũ)
-                                            string seatClass = "seat";
-                                            string status = seat.Status.ToLower();
-                                            bool isDisabled = false;
-                                            string seatColorClass = ""; // Class màu riêng
-
-                                            if (status == "booked" || status == "unavailable")
-                                            {
-                                                seatClass += " booked";
-                                                isDisabled = true;
-                                                seatColorClass = "seat-color-booked"; // Màu đỏ đậm
-                                            }
-                                            else if (currentRow < firstEconomyRow)
-                                            {
-                                                seatClass += " available";
-                                                seatColorClass = "seat-color-business"; // Màu cam
-                                            }
-                                            else
-                                            {
-                                                seatClass += " available";
-                                                seatColorClass = "seat-color-economy"; // Màu xanh
-                                            }
-                            // Thêm class loại ghế nếu cần (window/aisle)
-
-                                            <div class="@seatClass @seatColorClass" data-seat-id="@seat.SeatId" data-seat-number="@seat.SeatNumber" title="Ghế @seat.SeatNumber" @(isDisabled ? "disabled" : "")>
-                                                @* @seat.SeatNumber *@ @* Hiện số ghế nhỏ bên trong nếu muốn *@
+                                            <div class="seat-aisle d-flex align-items-center justify-content-center">
+                                                <i class="fas fa-male text-muted small"></i>
                                             </div>
                                         }
                                         else
                                         {
-                                            <div class="seat-empty" style="width: 30px; height: 30px; margin: 2px;"></div>
+                                            var seatVM = seatsInCurrentRow.FirstOrDefault(s => s.Column == col);
+                                            if (seatVM != null)
+                                            {
+                                                string seatDivClass = "seat";
+                                                string seatColorClass = "";
+                                                bool isDisabled = false;
+                                                string title = $"Ghế {seatVM.SeatNumber} - {seatVM.SectionName} - Giá: {seatVM.CalculatedPrice:N0} VNĐ";
+
+                                                if (seatVM.Status == "booked" || seatVM.Status == "unavailable")
+                                                {
+                                                    seatDivClass += " booked";
+                                                    isDisabled = true;
+                                                    seatColorClass = "seat-color-booked";
+                                                    title = $"Ghế {seatVM.SeatNumber} - Đã đặt";
+                                                }
+                                                else // available
+                                                {
+                                                    seatDivClass += " available";
+                                                    seatColorClass = seatVM.SectionName.Contains("Thương gia") ? "seat-color-business" : "seat-color-economy";
+                                                }
+                                                <div class="@seatDivClass @seatColorClass"
+                                                     data-seat-id="@seatVM.SeatId"
+                                                     data-seat-number="@seatVM.SeatNumber"
+                                                     data-seat-price="@seatVM.CalculatedPrice"
+                                                     data-section-name="@seatVM.SectionName"
+                                                     title="@title"
+                                                @(isDisabled ? "disabled" : "")>
+                                                    @*@seatVM.Column*@ @* Hiển thị chữ cái cột nhỏ trong ghế *@
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div class="seat-empty"></div> @* Ô trống nếu sơ đồ không có ghế ở đó *@
+                                            }
                                         }
                                     }
-                                }
-                                <div class="row-number text-muted fw-bold ms-2" style="width: 25px;">@currentRow</div>
-                            </div>
+                                    <div class="row-number text-muted fw-bold ms-2" style="width: 25px;">@currentRow</div>
+                                </div>
+                            }
                         }
-
-                        @* Thêm các biểu tượng khác (WC, Exit) nếu cần, dựa vào logic/data ghế *@
-
+                        else
+                        {
+                            <p class="text-center text-muted">Không có sơ đồ ghế cho chuyến bay này.</p>
+                        }
                     </div>
                 </div>
                 <div class="card-footer bg-light small text-muted text-center">
-                    Chọn ghế trống cho từng hành khách. Click lần nữa để bỏ chọn.
+                    Chọn ghế trống cho từng hành khách. Giá vé hiển thị khi di chuột vào ghế.
                 </div>
             </div>
         </div>
 
-        @* --- CỘT BÊN PHẢI: THÔNG TIN HÀNH KHÁCH & THANH TOÁN (Giữ nguyên) --- *@
+        @* --- CỘT BÊN PHẢI: THÔNG TIN HÀNH KHÁCH & THANH TOÁN --- *@
         <div class="col-lg-5 col-md-12">
-            @* ... (Code form thông tin hành khách và nút xác nhận như cũ) ... *@
             <div class="card shadow-sm sticky-top" style="top: 20px;">
                 <div class="card-header bg-primary text-white">
                     <i class="fas fa-users me-2"></i> Thông tin Hành khách (<span id="passengerCountDisplay">@passengerCount</span> người)
                 </div>
                 <div class="card-body" id="passengerFormsContainer">
-                    @* Hiển thị lỗi validation tổng hợp *@
                     <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert" style="display: none;"></div>
-
-                    @for (int i = 0; i < Model.Passengers.Count; i++)
+                    @if (Model.Passengers != null)
                     {
-                        <div class="passenger-info mb-3 p-3 border rounded bg-light shadow-sm" data-passenger-index="@i">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <strong>Hành khách @(i + 1)</strong>
-                                <span class="selected-seat-display badge bg-secondary">Chưa chọn ghế</span>
+                        for (int i = 0; i < Model.Passengers.Count; i++)
+                        {
+                            <div class="passenger-info mb-3 p-3 border rounded bg-light shadow-sm" data-passenger-index="@i">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <strong>Hành khách @(i + 1)</strong>
+                                    <span class="selected-seat-display badge bg-secondary">Chưa chọn ghế</span>
+                                </div>
+                                <input type="hidden" asp-for="Passengers[i].SelectedSeatId" class="selected-seat-id-input" />
+                                <input type="hidden" asp-for="Passengers[i].SelectedSeatNumber" class="selected-seat-number-input" />
+                                @* Các input họ tên, tuổi, giới tính giữ nguyên *@
+                                <div class="row gx-2 gy-2 mt-1">
+                                    <div class="col-md-12">
+                                        <label asp-for="Passengers[i].FullName" class="form-label form-label-sm visually-hidden"></label>
+                                        <input asp-for="Passengers[i].FullName" class="form-control form-control-sm" placeholder="Họ tên hành khách" required />
+                                        <span asp-validation-for="Passengers[i].FullName" class="text-danger small"></span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label asp-for="Passengers[i].Age" class="form-label form-label-sm visually-hidden"></label>
+                                        <input asp-for="Passengers[i].Age" type="number" class="form-control form-control-sm" placeholder="Tuổi" required min="0" />
+                                        <span asp-validation-for="Passengers[i].Age" class="text-danger small"></span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label asp-for="Passengers[i].Gender" class="form-label form-label-sm visually-hidden"></label>
+                                        <select asp-for="Passengers[i].Gender" class="form-select form-select-sm">
+                                            <option value="">-- Giới tính --</option>
+                                            <option value="Male">Nam</option>
+                                            <option value="Female">Nữ</option>
+                                            <option value="Other">Khác</option>
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
-                            <input type="hidden" asp-for="Passengers[i].SelectedSeat" class="selected-seat-input" />
-                            <div class="row gx-2 gy-2 mt-1">
-                                <div class="col-md-12">
-                                    <label asp-for="Passengers[i].FullName" class="form-label form-label-sm visually-hidden"></label>
-                                    <input asp-for="Passengers[i].FullName" class="form-control form-control-sm" placeholder="Họ tên hành khách" required />
-                                    <span asp-validation-for="Passengers[i].FullName" class="text-danger small"></span>
-                                </div>
-                                <div class="col-md-6">
-                                    <label asp-for="Passengers[i].Age" class="form-label form-label-sm visually-hidden"></label>
-                                    <input asp-for="Passengers[i].Age" type="number" class="form-control form-control-sm" placeholder="Tuổi" required min="0" />
-                                    <span asp-validation-for="Passengers[i].Age" class="text-danger small"></span>
-                                </div>
-                                <div class="col-md-6">
-                                    <label asp-for="Passengers[i].Gender" class="form-label form-label-sm visually-hidden"></label>
-                                    <select asp-for="Passengers[i].Gender" class="form-select form-select-sm">
-                                        <option value="">-- Giới tính --</option>
-                                        <option value="Male">Nam</option>
-                                        <option value="Female">Nữ</option>
-                                        <option value="Other">Khác</option>
-                                    </select>
-                                    @* Không cần validation cho giới tính nếu không bắt buộc *@
-                                </div>
-                            </div>
-                        </div>
+                        }
                     }
                 </div>
                 <div class="card-footer">
                     <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="fw-bold">Tổng cộng:</span>
-                        <span class="fs-5 fw-bold text-danger" id="totalPrice">@Model.EstimatedTotalPrice.ToString("N0") VNĐ</span>
+                        <span class="fw-bold">Tổng tiền tạm tính:</span>
+                        <span class="fs-5 fw-bold text-danger" id="totalPriceDisplay">0 VNĐ</span>
                     </div>
                     <div class="d-grid">
                         <button type="submit" class="btn btn-danger fw-bold" id="confirmBookingBtn" disabled>
-                            <i class="fas fa-check-circle me-1"></i> Xác nhận Thông tin & Đặt vé
+                            <i class="fas fa-check-circle me-1"></i> Xác nhận & Đặt vé
                         </button>
                     </div>
-                    @* <a asp-controller="FlightSearch" asp-action="Details" asp-route-id="@Model.FlightId" class="btn btn-sm btn-outline-secondary w-100 mt-2"> *@
-                    @*     <i class="fas fa-arrow-left me-1"></i> Quay lại chi tiết chuyến bay *@
-                    @* </a> *@
+                    <div>
+                        <a asp-controller="FlightSearch" asp-action="Details" asp-route-id="@Model.FlightId" class="btn btn-sm btn-outline-secondary w-100 mt-2">
+                            <i class="fas fa-arrow-left me-1"></i> Quay lại chi tiết
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </form>
 
-@* --- Cập nhật CSS --- *@
 <style>
+    /* CSS cho sơ đồ ghế (tương tự như trước, điều chỉnh kích thước, màu sắc) */
     .seat-map-container {
     }
 
@@ -187,293 +195,246 @@
     }
 
     .seat, .seat-aisle, .seat-empty {
-        display: inline-flex; /* Dùng flex để căn giữa icon/text bên trong */
+        display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 32px; /* Tăng kích thước */
-        height: 32px;
-        margin: 3px; /* Tăng khoảng cách */
-        border: 1px solid #adb5bd; /* Viền nhạt hơn */
-        border-radius: 5px; /* Bo góc nhiều hơn */
-        font-size: 9px; /* Giảm cỡ chữ số ghế */
+        width: 30px;
+        height: 30px;
+        margin: 2px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 10px;
         font-weight: bold;
         cursor: default;
-        vertical-align: middle;
-        transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out; /* Hiệu ứng mượt */
     }
 
-    .seat-aisle {
-        border: none;
-        background-color: transparent !important;
-        cursor: default;
-    }
-
-    .seat-empty {
+    .seat-aisle, .seat-empty {
         border: none;
         background-color: transparent !important;
     }
 
-    /* Trạng thái ghế */
     .seat.available {
         cursor: pointer;
     }
 
         .seat.available:hover {
-            background-color: #dee2e6 !important;
-            border-color: #6c757d;
+            background-color: #e9ecef !important;
+            border-color: #adb5bd;
         }
-    /* Hover rõ hơn */
+
     .seat.booked {
         cursor: not-allowed;
-        opacity: 0.5;
+        opacity: 0.6;
     }
 
     .seat.selected {
-        border-width: 2px; /* Viền dày hơn khi chọn */
+        border-width: 2px !important;
     }
 
-    /* Màu sắc ghế */
-    .seat-color-business {
+    /* Màu sắc ghế dựa trên Section */
+    .seat-color-business.available {
         background-color: #ffc107;
-        border-color: #ffac07;
-        color: #343a40;
+        border-color: #dda805;
+        color: #614d02;
     }
-    /* Cam */
-    .seat-color-economy {
+
+    .seat-color-economy.available {
         background-color: #cfe2ff;
         border-color: #9ec5fe;
         color: #084298;
     }
-    /* Xanh dương nhạt */
+
     .seat-color-booked {
         background-color: #6c757d;
         border-color: #5c636a;
         color: white;
     }
-    /* Xám đậm thay vì đỏ */
 
     .seat.selected.seat-color-business,
     .seat.selected.seat-color-economy {
-        background-color: #198754; /* Xanh lá khi chọn */
-        border-color: #157347;
-        color: white;
+        background-color: #198754 !important; /* Xanh lá đậm khi chọn */
+        border-color: #146c43 !important;
+        color: white !important;
     }
 
     .row-number {
-        line-height: 32px;
-        font-size: 12px;
+        line-height: 30px;
+        font-size: 11px;
     }
 
-    /* Chú thích */
     .seat-example {
-        width: 15px;
-        height: 15px;
+        display: inline-block;
+        width: 14px;
+        height: 14px;
         border-radius: 3px;
-        margin-right: 5px;
+        margin-right: 4px;
         vertical-align: middle;
+        border: 1px solid #666;
     }
-
-        .seat-example.available.business {
-            background-color: #ffc107;
-            border: 1px solid #ffac07;
-        }
-
-        .seat-example.available.economy {
-            background-color: #cfe2ff;
-            border: 1px solid #9ec5fe;
-        }
-
-        .seat-example.booked {
-            background-color: #6c757d;
-            border: 1px solid #5c636a;
-        }
-
-        .seat-example.selected {
-            background-color: #198754;
-            border: 1px solid #157347;
-        }
-
-    /* Form hành khách */
-    .passenger-info .selected-seat-display {
-        font-size: 0.9em;
-    }
-
 </style>
 
-@* --- Cập nhật JavaScript --- *@
 @section Scripts {
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const seatMap = document.querySelector('.seat-map-container');
-            const passengerFormsContainer = document.getElementById('passengerFormsContainer'); // Container chứa form HK
-            const passengerForms = passengerFormsContainer.querySelectorAll('.passenger-info'); // Lấy các form HK
-            const confirmBtn = document.getElementById('confirmBookingBtn');
-            const seatsNeededElement = document.getElementById('seatsNeeded');
+            const seatMapContainer = document.querySelector('.seat-map-container');
+            const passengerFormsContainer = document.getElementById('passengerFormsContainer');
+            const passengerForms = Array.from(passengerFormsContainer.querySelectorAll('.passenger-info'));
+            const confirmBookingBtn = document.getElementById('confirmBookingBtn');
+            const seatsNeededDisplay = document.getElementById('seatsNeededDisplay');
+            const totalPriceDisplay = document.getElementById('totalPriceDisplay');
             const passengerCount = @passengerCount;
-            let selectedSeatsMap = new Map(); // Dùng Map để lưu { seatNumber: passengerIndex }
-            let currentSelectingPassengerIndex = 0; // Index của HK đang được chọn ghế
 
-             // --- Hàm làm nổi bật form hành khách đang chọn ---
-            function highlightPassengerForm(index) {
-                passengerForms.forEach((form, i) => {
-                    if (i === index) {
-                        form.style.border = '2px solid #0d6efd'; // Viền xanh
-                        form.style.backgroundColor = '#e7f1ff';
-                    } else {
-                        form.style.border = '1px solid #dee2e6'; // Viền thường
-                        form.style.backgroundColor = '#f8f9fa'; // Nền thường
-                    }
+            let selectedSeatsData = new Map(); // Map: seatId -> { seatNumber, price, passengerIndex }
+            let currentSelectingPassengerIndex = 0;
+
+            function formatCurrency(value) {
+                return value.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' }).replace('₫', 'VNĐ');
+            }
+
+            function updatePassengerFormHighlight() {
+                passengerForms.forEach((form, index) => {
+                    form.style.border = (index === currentSelectingPassengerIndex && currentSelectingPassengerIndex < passengerCount) ? '2px solid #0d6efd' : '1px solid #dee2e6';
+                    form.style.backgroundColor = (index === currentSelectingPassengerIndex && currentSelectingPassengerIndex < passengerCount) ? '#e7f1ff' : '#f8f9fa';
                 });
             }
 
-            // --- Hàm cập nhật trạng thái nút Xác nhận ---
-            function updateConfirmButtonState() {
-                let seatsSelectedCount = selectedSeatsMap.size; // Số ghế đã chọn là size của Map
-                let remainingNeeded = passengerCount - seatsSelectedCount;
-                 seatsNeededElement.textContent = remainingNeeded >= 0 ? remainingNeeded : 0;
-                 seatsNeededElement.classList.toggle('text-danger', remainingNeeded > 0);
-                 seatsNeededElement.classList.toggle('text-success', remainingNeeded === 0);
+            function updateTotalAndButtonState() {
+                let totalSelected = 0;
+                let currentTotalPrice = 0;
+                selectedSeatsData.forEach(data => {
+                    totalSelected++;
+                    currentTotalPrice += data.price;
+                });
 
-                confirmBtn.disabled = seatsSelectedCount !== passengerCount; // Chỉ bật khi chọn đủ ghế
+                const remainingNeeded = passengerCount - totalSelected;
+                seatsNeededDisplay.textContent = remainingNeeded >= 0 ? remainingNeeded : 0;
+                seatsNeededDisplay.classList.toggle('text-danger', remainingNeeded > 0);
+                seatsNeededDisplay.classList.toggle('text-success', remainingNeeded === 0);
+
+                totalPriceDisplay.textContent = formatCurrency(currentTotalPrice);
+                confirmBookingBtn.disabled = totalSelected !== passengerCount;
             }
 
-             // --- Hàm tìm index của hành khách tiếp theo chưa có ghế ---
-            function findNextAvailablePassengerIndex() {
+            function findNextAvailablePassengerSlot() {
                 for (let i = 0; i < passengerCount; i++) {
-                    // Kiểm tra xem index i đã được gán ghế trong Map chưa
-                    let found = false;
-                    for (let passengerIndex of selectedSeatsMap.values()) {
-                        if (passengerIndex === i) {
-                            found = true;
-                            break;
+                    let passengerHasSeat = false;
+                    selectedSeatsData.forEach(data => {
+                        if (data.passengerIndex === i) {
+                            passengerHasSeat = true;
                         }
-                    }
-                    if (!found) {
-                        return i; // Trả về index đầu tiên chưa có ghế
-                    }
+                    });
+                    if (!passengerHasSeat) return i;
                 }
-                return -1; // Tất cả đã có ghế
+                return -1; // All passengers have seats
             }
 
-            // --- Xử lý click vào form hành khách để chọn ghế cho người đó ---
+            // Click on passenger form to set current selecting passenger
             passengerFormsContainer.addEventListener('click', function(e) {
-                const passengerForm = e.target.closest('.passenger-info');
-                if (passengerForm) {
-                     const index = parseInt(passengerForm.dataset.passengerIndex, 10);
-                     // Chỉ cho phép chọn nếu HK này chưa có ghế, HOẶC cho phép đổi ghế (nếu muốn)
-                      let currentSeat = null;
-                     for(let [seatNum, pIndex] of selectedSeatsMap.entries()){
-                         if(pIndex === index) {
-                             currentSeat = seatNum;
-                             break;
-                         }
-                     }
-
-                     // Nếu muốn cho đổi ghế thì bỏ điều kiện currentSeat === null
-                     // if (currentSeat === null) {
-                         currentSelectingPassengerIndex = index;
-                         highlightPassengerForm(index);
-                     // } else {
-                     //    alert(`Hành khách ${index + 1} đã chọn ghế ${currentSeat}. Bỏ chọn ghế đó trước nếu muốn đổi.`);
-                     // }
+                const form = e.target.closest('.passenger-info');
+                if (form) {
+                    currentSelectingPassengerIndex = parseInt(form.dataset.passengerIndex);
+                    updatePassengerFormHighlight();
                 }
             });
 
 
-            // --- Xử lý click vào ghế ---
-            seatMap.addEventListener('click', function (e) {
-                const targetSeatDiv = e.target.closest('.seat'); // Lấy đúng thẻ div .seat
+            if (seatMapContainer) {
+                seatMapContainer.addEventListener('click', function (e) {
+                    const seatDiv = e.target.closest('.seat.available'); // Chỉ ghế available mới được click
+                    if (!seatDiv) return;
 
-                if (!targetSeatDiv || targetSeatDiv.classList.contains('booked') || targetSeatDiv.hasAttribute('disabled')) {
-                    return; // Bỏ qua nếu không phải ghế trống
-                }
+                    const seatId = parseInt(seatDiv.dataset.seatId);
+                    const seatNumber = seatDiv.dataset.seatNumber;
+                    const seatPrice = parseFloat(seatDiv.dataset.seatPrice);
+                    const isSelected = seatDiv.classList.contains('selected');
 
-                const seatNumber = targetSeatDiv.dataset.seatNumber;
-                const isCurrentlySelected = targetSeatDiv.classList.contains('selected');
+                    if (isSelected) { // Bỏ chọn ghế
+                        seatDiv.classList.remove('selected');
+                        const passengerIndexOfThisSeat = selectedSeatsData.get(seatId)?.passengerIndex;
+                        selectedSeatsData.delete(seatId);
 
-                if (isCurrentlySelected) {
-                    // --- BỎ CHỌN GHẾ ---
-                    const passengerIndexHoldingSeat = selectedSeatsMap.get(seatNumber); // Lấy index HK đang giữ ghế này
+                        if (passengerIndexOfThisSeat !== undefined) {
+                            const form = passengerForms[passengerIndexOfThisSeat];
+                            form.querySelector('.selected-seat-id-input').value = '';
+                            form.querySelector('.selected-seat-number-input').value = '';
+                            const seatDisplay = form.querySelector('.selected-seat-display');
+                            seatDisplay.textContent = 'Chưa chọn ghế';
+                            seatDisplay.className = 'selected-seat-display badge bg-secondary';
+                        }
+                        // Ưu tiên gán ghế cho HK vừa bỏ chọn nếu họ chưa có ghế nào khác
+                        let nextSlot = findNextAvailablePassengerSlot();
+                        if (passengerIndexOfThisSeat !== undefined && nextSlot !== -1 && !Array.from(selectedSeatsData.values()).some(d => d.passengerIndex === passengerIndexOfThisSeat)) {
+                            currentSelectingPassengerIndex = passengerIndexOfThisSeat;
+                        } else {
+                           currentSelectingPassengerIndex = (nextSlot !== -1) ? nextSlot : (passengerCount > 0 ? 0 : -1);
+                        }
 
-                    targetSeatDiv.classList.remove('selected');
-                    // targetSeatDiv.classList.add('available'); // Class màu sẽ quyết định giao diện
 
-                    selectedSeatsMap.delete(seatNumber); // Xóa khỏi Map
+                    } else { // Chọn ghế mới
+                        if (selectedSeatsData.size >= passengerCount && !Array.from(selectedSeatsData.values()).some(d=>d.passengerIndex === currentSelectingPassengerIndex) ) {
+                            alert(`Đã chọn đủ ${passengerCount} ghế. Nếu muốn đổi, vui lòng bỏ chọn ghế cũ trước.`);
+                            return;
+                        }
+                        if (currentSelectingPassengerIndex === -1 || currentSelectingPassengerIndex >= passengerCount) {
+                             currentSelectingPassengerIndex = findNextAvailablePassengerSlot();
+                             if(currentSelectingPassengerIndex === -1){
+                                 alert('Tất cả hành khách đã có ghế. Nếu muốn đổi, hãy bỏ chọn ghế cũ trước.');
+                                 return;
+                             }
+                        }
 
-                    if (passengerIndexHoldingSeat !== undefined && passengerIndexHoldingSeat < passengerForms.length) {
-                        const passengerForm = passengerForms[passengerIndexHoldingSeat];
-                        passengerForm.querySelector('.selected-seat-input').value = '';
-                        const seatDisplay = passengerForm.querySelector('.selected-seat-display');
-                         seatDisplay.textContent = 'Chưa chọn ghế';
-                         seatDisplay.className = 'selected-seat-display badge bg-secondary'; // Đổi lại badge
+
+                        // Nếu HK này đã có ghế -> bỏ chọn ghế cũ của họ
+                        let oldSeatIdForThisPassenger = null;
+                        selectedSeatsData.forEach((data, id) => {
+                            if (data.passengerIndex === currentSelectingPassengerIndex) {
+                                oldSeatIdForThisPassenger = id;
+                            }
+                        });
+
+                        if (oldSeatIdForThisPassenger !== null) {
+                            const oldSeatDiv = seatMapContainer.querySelector(`.seat[data-seat-id="${oldSeatIdForThisPassenger}"]`);
+                            if (oldSeatDiv) oldSeatDiv.classList.remove('selected');
+                            selectedSeatsData.delete(oldSeatIdForThisPassenger);
+                        }
+
+                        // Chọn ghế mới
+                        seatDiv.classList.add('selected');
+                        selectedSeatsData.set(seatId, { seatNumber: seatNumber, price: seatPrice, passengerIndex: currentSelectingPassengerIndex });
+
+                        const form = passengerForms[currentSelectingPassengerIndex];
+                        form.querySelector('.selected-seat-id-input').value = seatId;
+                        form.querySelector('.selected-seat-number-input').value = seatNumber;
+                        const seatDisplay = form.querySelector('.selected-seat-display');
+                        seatDisplay.textContent = `Ghế: ${seatNumber} (${formatCurrency(seatPrice)})`;
+                        seatDisplay.className = 'selected-seat-display badge bg-success';
+
+                        // Chuyển sang HK tiếp theo chưa có ghế
+                        currentSelectingPassengerIndex = findNextAvailablePassengerSlot();
+                         if(currentSelectingPassengerIndex === -1 && passengerCount > 0 && selectedSeatsData.size < passengerCount) {
+                            // Nếu đã chọn hết ghế cho các slot, mà vẫn còn ghế trống cần chọn, quay lại slot đầu tiên chưa có
+                            for(let i=0; i < passengerCount; i++){
+                                if(!Array.from(selectedSeatsData.values()).some(d => d.passengerIndex === i)){
+                                     currentSelectingPassengerIndex = i;
+                                     break;
+                                }
+                            }
+                         }
+
                     }
-                     // Sau khi bỏ chọn, tự động chọn HK tiếp theo cần ghế
-                     currentSelectingPassengerIndex = findNextAvailablePassengerIndex();
-                     if(currentSelectingPassengerIndex === -1 && passengerCount > 0) currentSelectingPassengerIndex = 0; // Nếu đã đủ, quay về HK đầu
-                     highlightPassengerForm(currentSelectingPassengerIndex);
+                    updateTotalAndButtonState();
+                    updatePassengerFormHighlight();
+                });
+            }
 
-                } else {
-                    // --- CHỌN GHẾ MỚI ---
-                     if (currentSelectingPassengerIndex === -1 || currentSelectingPassengerIndex >= passengerForms.length) {
-                         // Tìm HK đầu tiên chưa có ghế
-                         currentSelectingPassengerIndex = findNextAvailablePassengerIndex();
-                         if(currentSelectingPassengerIndex === -1){
-                              alert('Tất cả hành khách đã có ghế. Nếu muốn đổi, hãy bỏ chọn ghế cũ trước.');
-                              return;
-                         }
-                         highlightPassengerForm(currentSelectingPassengerIndex);
-                     }
-
-
-                     // Kiểm tra xem HK này đã có ghế chưa, nếu có thì bỏ ghế cũ
-                     let oldSeatNumber = null;
-                     for (let [seatNum, pIndex] of selectedSeatsMap.entries()) {
-                         if (pIndex === currentSelectingPassengerIndex) {
-                             oldSeatNumber = seatNum;
-                             break;
-                         }
-                     }
-                     if (oldSeatNumber) {
-                         const oldSeatDiv = seatMap.querySelector(`.seat[data-seat-number="${oldSeatNumber}"]`);
-                         if (oldSeatDiv) {
-                             oldSeatDiv.classList.remove('selected');
-                         }
-                         selectedSeatsMap.delete(oldSeatNumber); // Xóa ghế cũ khỏi map
-                     }
-
-
-                    // Chọn ghế mới
-                    targetSeatDiv.classList.add('selected');
-                    selectedSeatsMap.set(seatNumber, currentSelectingPassengerIndex); // Lưu ghế mới và index HK
-
-                    // Cập nhật form của HK hiện tại
-                    const currentPassengerForm = passengerForms[currentSelectingPassengerIndex];
-                    currentPassengerForm.querySelector('.selected-seat-input').value = seatNumber;
-                     const seatDisplay = currentPassengerForm.querySelector('.selected-seat-display');
-                     seatDisplay.textContent = `Đã chọn: ${seatNumber}`;
-                     seatDisplay.className = 'selected-seat-display badge bg-success'; // Đổi badge
-
-                    // Tự động chuyển sang chọn cho hành khách tiếp theo (nếu còn)
-                     let nextIndex = findNextAvailablePassengerIndex();
-                     if(nextIndex !== -1){
-                         currentSelectingPassengerIndex = nextIndex;
-                         highlightPassengerForm(currentSelectingPassengerIndex);
-                     } else {
-                         // Đã chọn đủ, có thể bỏ highlight hoặc highlight HK cuối cùng
-                         // highlightPassengerForm(-1); // Bỏ highlight
-                     }
-                }
-
-                // Cập nhật trạng thái nút xác nhận
-                updateConfirmButtonState();
-            });
-
-            // Khởi tạo highlight và trạng thái nút
-            highlightPassengerForm(currentSelectingPassengerIndex); // Highlight HK đầu tiên
-            updateConfirmButtonState();
+            // Khởi tạo
+            if (passengerCount > 0) {
+                updatePassengerFormHighlight();
+            }
+            updateTotalAndButtonState();
         });
     </script>
 }

@@ -7,7 +7,8 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Globalization;
-using System.Collections.Generic; // Cho List
+using System.Collections.Generic;
+using PBL3.Models; // Cho List
 
 [Authorize(Roles = "Admin,Employee")] // Cho phép cả Employee xem thống kê? (Tùy yêu cầu)
 public class StatisticsController : Controller
@@ -46,7 +47,7 @@ public class StatisticsController : Controller
             // --- Truy vấn cơ sở ---
             var ticketsQuery = _context.Tickets
                                     .Include(t => t.Flight) // *** QUAN TRỌNG: Include Flight để lấy Airline ***
-                                    .Where(t => t.Status != "Cancelled"); // Chỉ tính vé hợp lệ
+                                    .Where(t => t.Status != TicketStatus.Cancelled); // Chỉ tính vé hợp lệ
 
             // --- Áp dụng bộ lọc ---
             ticketsQuery = ticketsQuery.Where(t => t.OrderTime.Year == currentYear); // Luôn lọc theo năm

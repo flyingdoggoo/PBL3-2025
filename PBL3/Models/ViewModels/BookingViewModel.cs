@@ -1,5 +1,4 @@
-﻿// File: Models/ViewModels/BookingViewModel.cs
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace PBL3.Models.ViewModels
@@ -8,56 +7,47 @@ namespace PBL3.Models.ViewModels
     {
         [Required]
         public int FlightId { get; set; }
+        public Flight? FlightInfo { get; set; } // Thông tin chuyến bay (tên, giờ,...)
 
-        // Thông tin chuyến bay (để hiển thị lại)
-        public Flight? FlightInfo { get; set; } // Truyền từ Controller sang View
+        // Danh sách các ghế có sẵn với thông tin giá và section
+        public List<SeatViewModel> SeatsLayout { get; set; } = new List<SeatViewModel>();
 
-        // Thông tin người đặt vé (lấy từ user đăng nhập)
-        public AppUser? BookerInfo { get; set; }
+        // Danh sách các section của chuyến bay với thông tin của chúng
+        public List<SectionInfoViewModel> FlightSections { get; set; } = new List<SectionInfoViewModel>();
 
-        // Danh sách thông tin cho từng hành khách (có thể bao gồm cả người đặt vé)
-        [Required]
-        [MinLength(1, ErrorMessage = "Phải có ít nhất 1 hành khách.")]
-        public List<PassengerInfoViewModel> Passengers { get; set; } = new List<PassengerInfoViewModel>();
 
-        // Danh sách tất cả ghế và trạng thái của chuyến bay (truyền từ Controller)
-        public List<SeatViewModel> AvailableSeats { get; set; } = new List<SeatViewModel>();
+        public List<PassengerBookingInfo> Passengers { get; set; } = new List<PassengerBookingInfo>();
+        public decimal EstimatedTotalPrice { get; set; } // Sẽ được tính bằng JS
 
-        // Tổng tiền ước tính (tính trong Controller)
-        public decimal EstimatedTotalPrice { get; set; }
-
-        // Các thông tin khác nếu cần (vd: mã giảm giá)
+        // Thêm các thông tin khác cần thiết cho việc hiển thị sơ đồ ghế
+        public int? MaxRowBusiness { get; set; } // Hàng cuối cùng của hạng Thương gia
+        public int? MaxRowEconomy { get; set; } // Hàng cuối cùng của hạng Phổ thông
     }
 
-    // Thông tin cho mỗi hành khách trong danh sách đặt vé
-    public class PassengerInfoViewModel
+    public class PassengerBookingInfo
     {
-        [Required(ErrorMessage = "Vui lòng nhập họ tên hành khách.")]
-        [Display(Name = "Họ tên")]
+        [Required(ErrorMessage = "Vui lòng nhập họ tên.")]
+        [Display(Name = "Họ và tên")]
         public string FullName { get; set; }
 
         [Required(ErrorMessage = "Vui lòng nhập tuổi.")]
-        [Range(0, 120)]
+        [Range(0, 120, ErrorMessage = "Tuổi không hợp lệ.")]
         [Display(Name = "Tuổi")]
         public int Age { get; set; }
 
-        [Display(Name = "Giới tính")] // Ví dụ thêm giới tính
+        [Display(Name = "Giới tính")]
         public string? Gender { get; set; } // Male, Female, Other
 
-        [Display(Name = "Số ghế đã chọn")]
-        public string? SelectedSeat { get; set; } // Lưu số ghế dạng "1A", "10F"
-
-        // Thêm các trường khác nếu cần (vd: thông tin liên hệ riêng)
+        public string? SelectedSeatNumber { get; set; } // Số ghế hành khách này chọn
+        public int? SelectedSeatId { get; set; } // Id của ghế đã chọn (nếu dùng model Seat)
     }
 
-    // ViewModel để hiển thị thông tin ghế trên giao diện chọn
-    public class SeatViewModel
+    // ViewModel phụ để chứa thông tin section cần thiết cho view
+    public class SectionInfoViewModel
     {
-        public int SeatId { get; set; }
-        public string SeatNumber { get; set; }
-        public string Status { get; set; } // Available, Booked, Unavailable
-        public string? SeatType { get; set; } // Window, Aisle, Standard
-        public int Row { get; set; } // Số hàng (để dễ sắp xếp)
-        public string Column { get; set; } // Chữ cái cột (để dễ sắp xếp)
+        public string Name { get; set; }
+        public decimal PriceMultiplier { get; set; }
+        // public int StartRow {get; set;} // Nếu bạn muốn định nghĩa hàng bắt đầu/kết thúc
+        // public int EndRow {get; set;}
     }
 }

@@ -13,7 +13,7 @@
     <div class="card shadow-sm mt-4">
         <div class="card-header bg-light d-flex justify-content-between align-items-center">
             <span><i class="fas fa-ticket-alt me-2"></i>Thông tin vé</span>
-            @if (Model.Status == "Booked" && Model.Flight?.StartingTime > DateTime.Now.AddHours(24))
+            @if (Model.Status == TicketStatus.Booked && Model.Flight?.StartingTime > DateTime.Now.AddHours(24))
             {
                 <a asp-action="CancelRequest" asp-route-id="@Model.TicketId" class="btn btn-sm btn-danger">
                     <i class="fas fa-ban me-1"></i> Yêu cầu Hủy vé này
@@ -52,15 +52,19 @@
                 <dd class="col-sm-9">@Model.OrderTime.ToString("dd/MM/yyyy HH:mm:ss")</dd>
                 <dt class="col-sm-3">Trạng thái:</dt>
                 <dd class="col-sm-9">
-                    @if (Model.Status == "Booked")
+                    @if (Model.Status == TicketStatus.Booked)
                     {
                         <span class="badge bg-success fs-6">Đã đặt</span>
                     }
-                    else if (Model.Status == "Pending Cancellation")
+                    else if (Model.Status == TicketStatus.Pending_Book)
+                    {
+                        <span class="badge bg-info text-dark fs-6">Chờ xác nhận</span>
+                    }
+                    else if (Model.Status == TicketStatus.Pending_Cancel)
                     {
                         <span class="badge bg-warning text-dark fs-6">Chờ hủy</span>
                     }
-                    else if (Model.Status == "Cancelled")
+                    else if (Model.Status == TicketStatus.Cancelled)
                     {
                         <span class="badge bg-danger fs-6">Đã hủy</span>
                     }

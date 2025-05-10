@@ -5,6 +5,14 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PBL3.Models
 {
+    public enum TicketStatus
+    {
+        Pending_Book,
+        Booked,
+        Pending_Cancel,
+        Cancelled,
+        Completed
+    }
     public class Ticket
     {
         [Key]
@@ -26,14 +34,12 @@ namespace PBL3.Models
         [Column(TypeName = "decimal(18,2)")]
         public decimal Price { get; set; }
 
-        // public string? SeatNumber { get; set; } // <<< XÓA DÒNG NÀY
-
         [Required]
         public DateTime OrderTime { get; set; } = DateTime.UtcNow;
 
         [Required]
         [StringLength(20)]
-        public string Status { get; set; } = "Booked";
+        public TicketStatus Status { get; set; } = TicketStatus.Pending_Book;
 
         // --- Navigation Properties ---
         [ForeignKey("PassengerId")]

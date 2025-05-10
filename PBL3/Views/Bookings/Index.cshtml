@@ -85,11 +85,11 @@
                     <td>@item.OrderTime.ToString("dd/MM/yy HH:mm")</td>
                     <td class="text-end">@item.Price.ToString("N0")</td>
                     <td>
-                        @if (item.Status == "Booked")
+                        @if (item.Status == TicketStatus.Booked)
                         {
                             <span class="badge bg-success">Đã đặt</span>
                         }
-                        else if (item.Status == "Cancelled")
+                        else if (item.Status == TicketStatus.Cancelled)
                         {
                             <span class="badge bg-danger">Đã hủy</span>
                         }
@@ -102,11 +102,11 @@
                         <a asp-action="Details" asp-route-id="@item.TicketId" class="btn btn-outline-info me-1" title="Xem Chi tiết">
                             <i class="fas fa-info-circle me-1"></i> Chi tiết
                         </a>
-                        @if (item.Status == "Booked")
+                        @if (item.Status == TicketStatus.Booked)
                         {
                             @* Admin không nên hủy trực tiếp ở đây nếu theo luồng yêu cầu *@
                         }
-                        else if (item.Status == "Pending Cancellation")
+                        else if (item.Status == TicketStatus.Pending_Cancel)
                         {
                             <a asp-action="ConfirmCancel" asp-route-id="@item.TicketId" class="btn btn-outline-danger" title="Xác nhận Hủy">
                                 <i class="fas fa-check me-1"></i> Duyệt Hủy

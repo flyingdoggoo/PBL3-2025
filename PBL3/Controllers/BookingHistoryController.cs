@@ -83,7 +83,7 @@ namespace PBL3.Controllers
             if (ticket == null) return NotFound("Không tìm thấy vé hoặc bạn không có quyền thao tác.");
 
             // Kiểm tra trạng thái vé và điều kiện hủy (Ví dụ: chỉ hủy vé "Booked")
-            if (ticket.Status != "Booked")
+            if (ticket.Status != TicketStatus.Booked && ticket.Status != TicketStatus.Pending_Book)
             {
                 TempData["ErrorMessage"] = $"Không thể yêu cầu hủy vé ở trạng thái '{ticket.Status}'.";
                 return RedirectToAction(nameof(Details), new { id = id });
@@ -114,7 +114,7 @@ namespace PBL3.Controllers
             if (ticket == null) return NotFound("Không tìm thấy vé hoặc bạn không có quyền thao tác.");
 
             // Kiểm tra lại trạng thái và điều kiện trước khi đổi status
-            if (ticket.Status != "Booked")
+            if (ticket.Status != TicketStatus.Booked && ticket.Status != TicketStatus.Pending_Book)
             {
                 TempData["ErrorMessage"] = $"Không thể yêu cầu hủy vé ở trạng thái '{ticket.Status}'.";
                 return RedirectToAction(nameof(Index));
@@ -127,7 +127,7 @@ namespace PBL3.Controllers
 
             try
             {
-                ticket.Status = "Pending Cancellation"; // Đánh dấu chờ hủy
+                ticket.Status = TicketStatus.Pending_Cancel; // Đánh dấu chờ hủy
                 _context.Update(ticket);
                 await _context.SaveChangesAsync();
 

@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using PBL3.Models;
+using PBL3.Utils;
 
 namespace PBL3.Data
 {
@@ -21,11 +22,11 @@ namespace PBL3.Data
             using (var context = new ApplicationDbContext(
                 serviceProvider.GetRequiredService<DbContextOptions<ApplicationDbContext>>()))
             {
-                // --- 1. Seed Airports (Nếu chưa có) ---
+                // --- 1. Seed Airports ---
                 if (!context.Airports.Any())
                 {
                     logger.LogInformation("Seeding sample airports...");
-                    var sampleAirports = new Airport[] { /* ... danh sách sân bay giữ nguyên ... */
+                    var sampleAirports = new Airport[] {
                         new Airport{ Code="HAN", Name="Sân bay Quốc tế Nội Bài", City="Hà Nội", Country="Việt Nam"},
                         new Airport{ Code="SGN", Name="Sân bay Quốc tế Tân Sơn Nhất", City="TP. Hồ Chí Minh", Country="Việt Nam"},
                         new Airport{ Code="DAD", Name="Sân bay Quốc tế Đà Nẵng", City="Đà Nẵng", Country="Việt Nam"},
@@ -42,26 +43,22 @@ namespace PBL3.Data
                 var airports = context.Airports.AsEnumerable().ToDictionary(a => a.Code, a => a.Id);
                 if (!airports.Any()) { logger.LogError("Cannot seed flights: No airports found."); return; }
 
-                // --- 2. Seed Flights and Seats (Chỉ seed nếu bảng Flights trống) ---
+                // --- 2. Seed Flights, Sections, and Seats (Chỉ seed nếu bảng Flights trống) ---
                 if (!context.Flights.Any())
                 {
-                    logger.LogInformation("Flights table is empty. Generating new flight data...");
+                    logger.LogInformation("Flights table is empty. Generating new flight, section, and seat data...");
                     var flightsToSeed = new List<Flight>();
-                    var seatsToSeed = new List<Seat>();
-                    var today = DateTime.Today;
+                    // Không cần list seatsToSeed ở đây nữa vì sẽ tạo trực tiếp khi có FlightId
 
-                    // *** GIẢM SỐ LƯỢNG TUYẾN ĐƯỜNG HOẶC SỐ NGÀY ***
+                    var today = DateTime.Today;
                     var routesToSeed = new List<(string From, string To, int Distance, int Duration, decimal Price)>
                     {
                         ("HAN", "SGN", 1200, 125, 1500000m), ("SGN", "HAN", 1200, 125, 1450000m),
                         ("HAN", "DAD", 630, 80, 900000m),   ("DAD", "HAN", 630, 80, 850000m),
-                        ("SGN", "DAD", 610, 85, 950000m),   ("DAD", "SGN", 610, 85, 920000m),
-                        ("SGN", "PQC", 300, 60, 750000m),   ("PQC", "SGN", 300, 60, 700000m),
-                        ("HAN", "HPH", 100, 30, 500000m),   ("HPH", "HAN", 100, 30, 480000m), // Thêm tuyến ngắn
-                        ("DAD", "CXR", 250, 50, 600000m),   ("CXR", "DAD", 250, 50, 590000m) // Thêm tuyến miền Trung
+                        // Thêm các tuyến khác nếu muốn giảm tải
                     };
 
-                    int numberOfDaysToSeed = 3; // *** GIẢM SỐ NGÀY SEED *** (Ví dụ: 3 ngày tới)
+                    int numberOfDaysToSeed = 3; // Giảm số ngày để test nhanh
                     logger.LogInformation($"Generating flights for the next {numberOfDaysToSeed} days...");
 
                     for (int day = 0; day < numberOfDaysToSeed; day++)
@@ -71,75 +68,103 @@ namespace PBL3.Data
                         {
                             if (airports.ContainsKey(route.From) && airports.ContainsKey(route.To))
                             {
-                                // *** GIẢM SỐ CHUYẾN/NGÀY/TUYẾN ***
-                                int flightsPerDay = 1; // Chỉ tạo 1 chuyến/ngày/tuyến để giảm số lượng
+                                int flightsPerDay = 1; // Chỉ 1 chuyến/ngày/tuyến để giảm
                                 AddFlightsToList(flightsToSeed, airports[route.From], airports[route.To], currentDate, route.Distance, route.Duration, route.Price, flightsPerDay);
                             }
                             else { logger.LogWarning($"Skipping flight seed: Airport code '{route.From}' or '{route.To}' not found."); }
                         }
                     }
 
-                    // --- LƯU CHUYẾN BAY VÀ TẠO GHẾ (Giữ nguyên logic) ---
                     if (flightsToSeed.Any())
                     {
                         context.Flights.AddRange(flightsToSeed);
                         try
                         {
-                            context.SaveChanges(); // Lưu Flights để lấy ID
+                            context.SaveChanges(); // **LƯU CHUYẾN BAY ĐỂ LẤY FLIGHT ID**
                             logger.LogInformation($"Finished seeding {flightsToSeed.Count} flights.");
 
-                            logger.LogInformation("Generating seats for newly seeded flights...");
-                            // Tạo ghế cho các chuyến bay vừa lưu
-                            foreach (var seededFlight in flightsToSeed)
+                            logger.LogInformation("Generating sections and seats for newly seeded flights...");
+                            var allNewSeats = new List<Seat>();
+                            foreach (var seededFlight in flightsToSeed) // Lặp qua các chuyến bay vừa lưu
                             {
-                                GenerateSeatsForFlight(seatsToSeed, seededFlight);
-                            }
+                                // --- TẠO SECTIONS CHO FLIGHT NÀY ---
+                                int businessCapacity = (int)Math.Floor(seededFlight.Capacity * 0.30); // 30% thương gia
+                                int economyCapacity = seededFlight.Capacity - businessCapacity;
 
-                            if (seatsToSeed.Any())
+                                var sectionsForThisFlight = new List<Section>();
+                                if (businessCapacity > 0)
+                                {
+                                    sectionsForThisFlight.Add(new Section
+                                    {
+                                        FlightId = seededFlight.FlightId, // Gán FlightId
+                                        SectionName = "Thương gia",
+                                        Capacity = businessCapacity,
+                                        PriceMultiplier = 1.8m // Ví dụ: Giá gấp 1.8 lần
+                                    });
+                                }
+                                if (economyCapacity > 0)
+                                {
+                                    sectionsForThisFlight.Add(new Section
+                                    {
+                                        FlightId = seededFlight.FlightId, // Gán FlightId
+                                        SectionName = "Phổ thông",
+                                        Capacity = economyCapacity,
+                                        PriceMultiplier = 1.0m // Giá cơ bản
+                                    });
+                                }
+
+                                if (sectionsForThisFlight.Any())
+                                {
+                                    context.Sections.AddRange(sectionsForThisFlight);
+                                    context.SaveChanges(); // **LƯU SECTIONS ĐỂ LẤY SECTION ID**
+
+                                    // --- TẠO GHẾ CHO TỪNG SECTION VỪA LƯU ---
+                                    int startingRow = 1; // Bắt đầu từ hàng 1 cho mỗi section
+                                    foreach (var newSection in sectionsForThisFlight)
+                                    {
+                                        startingRow = SeatGenerator.GenerateSeatsForSection(allNewSeats, newSection, startingRow);
+                                    }
+                                }
+                            } // Kết thúc vòng lặp seededFlight
+
+                            if (allNewSeats.Any())
                             {
-                                context.Seats.AddRange(seatsToSeed);
-                                context.SaveChanges(); // Lưu Seats
-                                logger.LogInformation($"Finished generating and saving {seatsToSeed.Count} seats.");
+                                context.Seats.AddRange(allNewSeats);
+                                context.SaveChanges(); // Lưu tất cả ghế
+                                logger.LogInformation($"Finished generating and saving {allNewSeats.Count} seats for all flights.");
                             }
-                            else { logger.LogWarning("No seats were generated."); }
+                            else { logger.LogWarning("No seats were generated for any flight."); }
+
                         }
-                        catch (Exception ex) { logger.LogError(ex, "Error saving flights or generating/saving seats."); }
+                        catch (Exception ex) { logger.LogError(ex, "Error saving flights, sections, or seats."); }
                     }
                     else { logger.LogWarning("No flights were generated to seed."); }
                 }
-                else { logger.LogInformation("Flights table is not empty. Skipping flight and seat seeding."); }
+                else { logger.LogInformation("Flights table is not empty. Skipping flight, section, and seat seeding."); }
 
                 logger.LogInformation("DbInitializer data check/seeding finished.");
             }
         }
 
-        // Hàm AddFlightsToList (Giữ nguyên logic tạo flight)
+        // Hàm AddFlightsToList (Giữ nguyên logic tạo đối tượng Flight)
         private static void AddFlightsToList(List<Flight> flights, int departureAirportId, int arrivalAirportId, DateTime date, int distance, int durationMinutes, decimal basePrice, int numberOfFlights)
         {
-            string[] airlines = { "Vietnam Airlines", "Vietjet Air", "Bamboo Airways" }; // Giảm số hãng bay
+            string[] airlines = { "Vietnam Airlines", "Vietjet Air", "Bamboo Airways" };
 
             for (int i = 0; i < numberOfFlights; i++)
             {
-                // Chọn giờ cố định hơn cho ít chuyến bay
                 TimeSpan departureTimeOfDay = (i % 2 == 0) ? new TimeSpan(9, 30, 0) : new TimeSpan(15, 0, 0);
-                // Hoặc giữ random nếu muốn đa dạng giờ
-                // int hour = (i < numberOfFlights / 2) ? random.Next(7, 13) : random.Next(13, 21);
-                // int minute = random.Next(0, 4) * 15;
-                // var departureTimeOfDay = new TimeSpan(hour, minute, 0);
-
-
                 var departureTime = date.Add(departureTimeOfDay);
                 if (departureTime < DateTime.Now && date.Date == DateTime.Today) continue;
 
                 var arrivalTime = departureTime.AddMinutes(durationMinutes);
                 var airline = airlines[random.Next(airlines.Length)];
                 var flightNumber = $"{airline.Substring(0, 2).ToUpper().Replace(" ", "")}{random.Next(101, 999)}";
-                var capacity = random.Next(100, 181); // Giảm capacity một chút
+                var capacity = random.Next(100, 181);
 
-                // Giá vé biến động ít hơn
                 decimal timeMultiplier = (departureTime.Hour < 9 || departureTime.Hour > 17) ? 0.98m : 1.05m;
                 decimal dayMultiplier = (date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday) ? 1.1m : 1.0m;
-                decimal randomMultiplier = 1 + (decimal)(random.Next(-5, 6)) / 100; // -5% đến +5%
+                decimal randomMultiplier = 1 + (decimal)(random.Next(-5, 6)) / 100;
                 decimal finalPrice = basePrice * timeMultiplier * dayMultiplier * randomMultiplier;
                 finalPrice = Math.Round(finalPrice / 10000) * 10000;
 
@@ -150,40 +175,14 @@ namespace PBL3.Data
                     ReachingDestination = arrivalAirportId,
                     StartingTime = departureTime,
                     ReachingTime = arrivalTime,
-                    Capacity = capacity,
-                    Price = finalPrice,
+                    Capacity = capacity, // Tổng capacity của chuyến bay
+                    Price = finalPrice,  // Giá cơ sở (cho hạng Phổ thông)
                     Airline = airline,
-                    AvailableSeats = capacity,
+                    AvailableSeats = capacity, // Sẽ được cập nhật dựa trên vé bán
                     Distance = distance
                 });
             }
         }
-
-        // Hàm GenerateSeatsForFlight (Giữ nguyên)
-        private static void GenerateSeatsForFlight(List<Seat> seats, Flight flight)
-        {
-            // ... (Code tạo seat như cũ) ...
-            if (flight == null || flight.FlightId <= 0 || flight.Capacity <= 0) return;
-            int seatsGenerated = 0;
-            int rows = (int)Math.Ceiling((double)flight.Capacity / 6);
-            string[] seatLetters = { "A", "B", "C", "D", "E", "F" };
-            for (int row = 1; row <= rows && seatsGenerated < flight.Capacity; row++)
-            {
-                foreach (string letter in seatLetters)
-                {
-                    if (seatsGenerated >= flight.Capacity) break;
-                    string seatNumber = $"{row}{letter}";
-                    string seatType = (letter == "A" || letter == "F") ? "Window" : (letter == "C" || letter == "D" ? "Aisle" : "Standard");
-                    seats.Add(new Seat
-                    {
-                        SeatNumber = seatNumber,
-                        FlightId = flight.FlightId,
-                        Status = "Available",
-                        SeatType = seatType
-                    });
-                    seatsGenerated++;
-                }
-            }
-        }
+        
     }
 }

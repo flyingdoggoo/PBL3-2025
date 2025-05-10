@@ -96,7 +96,7 @@ namespace PBL3.Controllers
         public async Task<IActionResult> PendingCancellations(int? pageNumber)
         {
             var pendingTicketsQuery = _context.Tickets
-                                        .Where(t => t.Status == "Pending Cancellation")
+                                        .Where(t => t.Status == TicketStatus.Pending_Cancel)
                                         .Include(t => t.Passenger)
                                         .Include(t => t.Flight)
                                         .OrderBy(t => t.OrderTime); // Sắp xếp theo thời gian yêu cầu
@@ -121,7 +121,7 @@ namespace PBL3.Controllers
             if (ticket == null) return NotFound();
 
             // Chỉ xử lý vé đang chờ hủy
-            if (ticket.Status != "Pending Cancellation")
+            if (ticket.Status != TicketStatus.Pending_Cancel)
             {
                 TempData["WarningMessage"] = "Vé này không ở trạng thái 'Chờ hủy'.";
                 return RedirectToAction(nameof(PendingCancellations));
@@ -142,7 +142,7 @@ namespace PBL3.Controllers
 
             if (ticket == null) return NotFound();
 
-            if (ticket.Status != "Pending Cancellation")
+            if (ticket.Status != TicketStatus.Pending_Cancel)
             {
                 TempData["WarningMessage"] = "Vé này không ở trạng thái 'Chờ hủy' hoặc đã được xử lý.";
                 return RedirectToAction(nameof(PendingCancellations));
@@ -151,7 +151,7 @@ namespace PBL3.Controllers
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                ticket.Status = "Cancelled"; // Đổi trạng thái
+                ticket.Status = TicketStatus.Cancelled; // Đổi trạng thái
 
                 if (ticket.Flight != null)
                 {
@@ -199,7 +199,7 @@ namespace PBL3.Controllers
             var ticket = await _context.Tickets.FirstOrDefaultAsync(t => t.TicketId == id);
             if (ticket == null) return NotFound();
 
-            if (ticket.Status != "Pending Cancellation")
+            if (ticket.Status != TicketStatus.Pending_Cancel)
             {
                 TempData["WarningMessage"] = "Vé này không ở trạng thái 'Chờ hủy' hoặc đã được xử lý.";
                 return RedirectToAction(nameof(PendingCancellations));
@@ -207,7 +207,7 @@ namespace PBL3.Controllers
 
             try
             {
-                ticket.Status = "Booked"; // Trả về trạng thái cũ
+                ticket.Status = TicketStatus.Booked; // Trả về trạng thái cũ
                 _context.Update(ticket);
                 await _context.SaveChangesAsync();
 

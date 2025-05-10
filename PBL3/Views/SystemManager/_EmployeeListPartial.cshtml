@@ -1,0 +1,69 @@
+﻿@model IEnumerable<PBL3.Models.AppUser>
+@inject UserManager<AppUser> UserManager
+
+<table class="table table-striped table-hover">
+    <thead>
+        <tr>
+            <th>
+                @* Allow clicking header to sort - Enhance later if needed *@
+                Full Name
+            </th>
+            <th>
+                Email
+            </th>
+            <th>
+                Age
+            </th>
+            <th>
+                Role(s)
+            </th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (!Model.Any())
+        {
+            <tr>
+                <td colspan="5" class="text-center">No employees found.</td>
+            </tr>
+        }
+        else
+        {
+            @foreach (var item in Model)
+            {
+                // Get roles async in loop (can be slow - consider optimizing if many users)
+                var roles = await UserManager.GetRolesAsync(item);
+                var rolesString = string.Join(", ", roles);
+
+                // Add data-userid and a class to make the row clickable
+                <tr class="employee-row" data-userid="@item.Id" style="cursor:pointer;">
+                    <td>
+                        @Html.DisplayFor(modelItem => item.FullName)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.Email)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.Age)
+                    </td>
+                    <td>
+                        @rolesString
+                    </td>
+                    <td>
+                        @* Stop propagation prevents row click when icon is clicked *@
+                        <button type="button" class="btn btn-sm btn-danger delete-employee-btn"
+                                data-userid="@item.Id"
+                                data-username="@item.FullName"
+                                onclick="event.stopPropagation();">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                        @* Add other action buttons here if needed *@
+                    </td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>
+
+@* Include AntiForgeryToken for POST requests initiated by JS *@
+@Html.AntiForgeryToken()

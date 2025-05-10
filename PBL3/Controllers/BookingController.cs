@@ -4,16 +4,16 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PBL3.Data;
 using PBL3.Models;
-using PBL3.Models.ViewModels; // Namespace chứa BookingViewModel, SeatViewModel,...
+using PBL3.Models.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging; // Namespace cho ILogger
+using Microsoft.Extensions.Logging;
 
 namespace PBL3.Controllers
 {
-    [Authorize] // Yêu cầu đăng nhập cho tất cả các action trong controller này
+    [Authorize]
     public class BookingController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -28,214 +28,132 @@ namespace PBL3.Controllers
         }
 
         // GET: Booking/StartBooking?flightId=5&passengers=2
-        [HttpGet]
+        // Action này giờ sẽ là trang chọn ghế và nhập thông tin hành khách
         [HttpGet]
         public async Task<IActionResult> StartBooking(int? flightId, int passengers = 1)
         {
-            _logger.LogInformation("GET StartBooking called. FlightId: {FlightId}, Passengers: {Passengers}", flightId, passengers);
+            _logger.LogInformation("GET SelectSeats called. FlightId: {FlightId}, Passengers: {Passengers}", flightId, passengers);
 
-            // --- 1. Validation đầu vào ---
-            if (flightId == null)
-            {
-                _logger.LogWarning("StartBooking failed: FlightId is null.");
-                return BadRequest("Thiếu mã chuyến bay.");
-            }
-            // Đặt giới hạn hợp lý cho số lượng hành khách có thể đặt trong 1 lần
-            const int maxPassengersPerBooking = 10;
+            if (flightId == null) return BadRequest("Thiếu mã chuyến bay.");
+            const int maxPassengersPerBooking = 6; // Giới hạn số lượng hành khách
             if (passengers < 1 || passengers > maxPassengersPerBooking)
             {
-                _logger.LogWarning("StartBooking failed: Invalid passenger count ({PassengerCount}). Allowed range: 1-{MaxPassengers}", passengers, maxPassengersPerBooking);
-                TempData["ErrorMessage"] = $"Số lượng hành khách không hợp lệ (phải từ 1 đến {maxPassengersPerBooking}).";
-                // Quay về trang chủ hoặc trang tìm kiếm trước đó nếu có thông tin
+                TempData["ErrorMessage"] = $"Số lượng hành khách không hợp lệ (1-{maxPassengersPerBooking}).";
                 return RedirectToAction("Index", "Home");
             }
 
-            // --- 2. Lấy thông tin chuyến bay ---
             var flight = await _context.Flights
-                                      .Include(f => f.DepartureAirport) // Include để hiển thị tên/code sân bay
+                                      .Include(f => f.DepartureAirport)
                                       .Include(f => f.ArrivalAirport)
-                                      .AsNoTracking() // Không cần theo dõi thay đổi ở bước này
+                                      .Include(f => f.Sections) // *** QUAN TRỌNG: Include Sections của chuyến bay ***
+                                          .ThenInclude(sec => sec.Seats.Where(s => s.Status == "Available" || s.TicketId == null)) // Chỉ lấy ghế Available
+                                      .AsNoTracking()
                                       .FirstOrDefaultAsync(f => f.FlightId == flightId);
 
-            if (flight == null)
-            {
-                _logger.LogWarning("StartBooking failed: Flight not found for ID {FlightId}.", flightId);
-                return NotFound($"Không tìm thấy chuyến bay với ID {flightId}.");
-            }
+            if (flight == null) return NotFound($"Không tìm thấy chuyến bay ID {flightId}.");
 
-            // --- 3. Lấy thông tin người dùng hiện tại ---
             var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-            {
-                // Tình huống hiếm gặp nếu session hết hạn hoặc user bị xóa
-                _logger.LogError("StartBooking failed: User not found for authenticated principal.");
-                return Challenge(); // Yêu cầu đăng nhập lại
-            }
+            if (user == null) return Challenge();
 
-            // --- 4. Kiểm tra số ghế trống ---
-            if (flight.AvailableSeats < passengers)
+            // Đếm tổng số ghế thực sự Available từ các Section đã include
+            int totalActualAvailableSeats = flight.Sections.SelectMany(sec => sec.Seats).Count(s => s.Status == "Available");
+
+            if (totalActualAvailableSeats < passengers)
             {
-                _logger.LogWarning("StartBooking failed: Not enough available seats for Flight ID {FlightId}. Needed: {NeededSeats}, Available: {AvailableSeats}", flightId, passengers, flight.AvailableSeats);
-                TempData["ErrorMessage"] = $"Chuyến bay {flight.FlightNumber} chỉ còn {flight.AvailableSeats} ghế trống, không đủ cho {passengers} hành khách.";
-                // Chuyển hướng đến trang chi tiết để người dùng xem lại
+                TempData["ErrorMessage"] = $"Chuyến bay {flight.FlightNumber} chỉ còn {totalActualAvailableSeats} ghế trống, không đủ cho {passengers} hành khách.";
                 return RedirectToAction("Details", "FlightSearch", new { id = flightId });
             }
 
-            // --- 5. Lấy và Sắp xếp dữ liệu ghế ---
-            _logger.LogInformation("Fetching and sorting seats for Flight ID: {FlightId}", flightId);
-            List<Seat> seatsList;
-            try
+            // --- Tạo SeatViewModel với giá đã tính toán ---
+            var seatLayout = new List<SeatViewModel>();
+            if (flight?.Sections != null) // Kiểm tra flight và sections không null
             {
-                // Lấy dữ liệu từ DB
-                seatsList = await _context.Seats
-                                        .Where(s => s.FlightId == flightId)
-                                        .AsNoTracking()
-                                        .ToListAsync();
+                foreach (var section in flight.Sections.OrderBy(s => s.SectionName == "Thương gia" ? 0 : (s.SectionName == "Phổ thông" ? 1 : 2))) // Ưu tiên Thương gia, rồi Phổ thông
+                {
+                    // Lấy TẤT CẢ ghế của section này để vẽ sơ đồ
+                    var allSeatsInSection = await _context.Seats
+                                                    .Where(s => s.SectionId == section.SectionId)
+                                                    .OrderBy(s => s.Row) // Sắp xếp theo hàng
+                                                    .ThenBy(s => s.Column) // Rồi đến cột
+                                                    .AsNoTracking() // Thêm AsNoTracking nếu chỉ đọc
+                                                    .ToListAsync();
 
-                // Sắp xếp trong bộ nhớ (In-Memory) để tránh lỗi Expression Tree
-                seatsList = seatsList
-                            .OrderBy(s => s.SeatNumber?.Length ?? int.MaxValue) // Xử lý SeatNumber null
-                            .ThenBy(s => int.TryParse(new string((s.SeatNumber ?? "").Where(char.IsDigit).ToArray()), out int r) ? r : int.MaxValue) // Sắp theo số hàng
-                            .ThenBy(s => GetSeatColumnSortOrder(new string((s.SeatNumber ?? "").Where(char.IsLetter).ToArray()))) // Sắp theo cột
-                            .ToList();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching or sorting seats for Flight ID {FlightId}", flightId);
-                TempData["ErrorMessage"] = "Đã xảy ra lỗi khi tải sơ đồ ghế. Vui lòng thử lại.";
-                return RedirectToAction("Details", "FlightSearch", new { id = flightId });
-            }
-
-
-            _logger.LogInformation("Found and sorted {SeatCount} seats for Flight ID {FlightId}.", seatsList.Count, flightId);
-
-            // Kiểm tra xem có dữ liệu ghế không (sau khi lấy từ DB)
-            if (!seatsList.Any())
-            {
-                _logger.LogError("StartBooking failed: No seat records found in database for Flight ID {FlightId}. Check data seeding.", flightId);
-                TempData["ErrorMessage"] = "Lỗi nghiêm trọng: Không tìm thấy dữ liệu ghế cho chuyến bay này. Vui lòng liên hệ bộ phận hỗ trợ.";
-                // Có thể chuyển hướng về trang lỗi hoặc trang chi tiết
-                return RedirectToAction("Details", "FlightSearch", new { id = flightId });
+                    foreach (var dbSeat in allSeatsInSection)
+                    {
+                        seatLayout.Add(new SeatViewModel
+                        {
+                            SeatId = dbSeat.SeatId,
+                            SeatNumber = dbSeat.SeatNumber,
+                            Row = dbSeat.Row,
+                            Column = dbSeat.Column,
+                            Status = dbSeat.Status.ToString().ToLower(),
+                            SectionName = section.SectionName,
+                            CalculatedPrice = flight.Price * section.PriceMultiplier,
+                            // Thêm IsEmergencyExit, IsNearToilet nếu có
+                        });
+                    }
+                }
             }
 
-            // --- 6. Tạo ViewModel ---
-            _logger.LogInformation("Creating BookingViewModel...");
+
+            seatLayout = seatLayout
+                .OrderBy(s => s.SectionName == "Thương gia" ? 0 : (s.SectionName == "Phổ thông" ? 1 : 2)) // Sắp xếp theo SectionName (TG -> PT -> Khác)
+                .ThenBy(s => s.Row)
+                .ThenBy(s => s.Column) // Dùng lại hàm helper nếu có
+                .ToList();
+
+
             var viewModel = new BookingViewModel
             {
                 FlightId = flight.FlightId,
-                FlightInfo = flight, // Truyền thông tin chuyến bay đã lấy
-                BookerInfo = user,  // Truyền thông tin người đặt vé
-                AvailableSeats = seatsList.Select(s => MapSeatToViewModel(s)).ToList(), // Map danh sách ghế đã sắp xếp
-                Passengers = Enumerable.Range(0, passengers).Select(i => // Tạo list PassengerInfoViewModel
+                FlightInfo = flight,
+                SeatsLayout = seatLayout, // seatsLayout đã được tạo ở trên
+                FlightSections = flight.Sections.Select(s => new SectionInfoViewModel { Name = s.SectionName, PriceMultiplier = s.PriceMultiplier }).ToList(),
+                Passengers = Enumerable.Range(0, passengers).Select(i =>
                     (i == 0)
-                        ? new PassengerInfoViewModel { FullName = user.FullName, Age = user.Age } // Người đầu tiên lấy thông tin từ người đặt
-                        : new PassengerInfoViewModel() // Những người khác để trống
+                        ? new PassengerBookingInfo { FullName = user.FullName, Age = user.Age, Gender = null }
+                        : new PassengerBookingInfo()
                 ).ToList(),
-                EstimatedTotalPrice = flight.Price * passengers // Tính giá ước tính
+                // EstimatedTotalPrice sẽ được tính bằng JS
             };
-            _logger.LogInformation("BookingViewModel created with {PassengerCount} passengers and {SeatCount} seat models.", viewModel.Passengers.Count, viewModel.AvailableSeats.Count);
 
-            // --- 7. Trả về View ---
-            return View("SelectSeats", viewModel); // Chỉ định rõ tên View và truyền ViewModel
+            return View("SelectSeats", viewModel);  // Trả về view SelectSeats.cshtml
         }
 
-        // --- Private Helper Methods ---
-
-        // Hàm map từ Seat (Entity) sang SeatViewModel (cho View)
-        private SeatViewModel MapSeatToViewModel(Seat seat)
-        {
-            string seatNumStr = seat?.SeatNumber ?? "";
-            string col = string.Empty;
-            int row = 0;
-
-            if (!string.IsNullOrEmpty(seatNumStr))
-            {
-                col = new string(seatNumStr.Where(char.IsLetter).ToArray());
-                string rowStr = new string(seatNumStr.Where(char.IsDigit).ToArray());
-                int.TryParse(rowStr, out row); // Gán 0 nếu không parse được
-
-                if (row == 0 || string.IsNullOrEmpty(col))
-                {
-                    _logger.LogWarning("Could not properly parse Row/Column for SeatNumber: {SeatNumber} (SeatId: {SeatId})", seatNumStr, seat?.SeatId);
-                }
-            }
-            else
-            {
-                _logger.LogWarning("SeatNumber is null or empty for SeatId: {SeatId}", seat?.SeatId);
-            }
-
-            return new SeatViewModel
-            {
-                SeatId = seat?.SeatId ?? 0,
-                SeatNumber = seatNumStr,
-                Status = seat?.Status ?? "Unavailable", // Trạng thái mặc định nếu seat null
-                SeatType = seat?.SeatType,
-                Row = row,
-                Column = col
-            };
-        }
-
-        // Hàm lấy thứ tự sắp xếp cho cột ghế
-        private static int GetSeatColumnSortOrder(string column)
-        {
-            // Chuyển về chữ hoa và xử lý null/rỗng
-            return column?.ToUpperInvariant() switch // Dùng ToUpperInvariant để ổn định hơn
-            {
-                "A" => 1,
-                "B" => 2,
-                "C" => 3,
-                "D" => 4,
-                "E" => 5,
-                "F" => 6,
-                "G" => 7,
-                "H" => 8,
-                "K" => 9, // Thêm cột K nếu layout có
-                _ => 99 // Các cột không xác định xếp cuối
-            };
-        }
 
         // POST: Booking/ConfirmBooking
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ConfirmBooking(BookingViewModel model)
         {
-            _logger.LogInformation("ConfirmBooking POST received for Flight ID: {FlightId}", model.FlightId);
+            _logger.LogInformation("ConfirmBooking POST received for Flight ID: {FlightId} with {PassengerCount} passengers.", model.FlightId, model.Passengers?.Count);
 
-            // --- VALIDATION PHÍA SERVER ---
-            if (!ModelState.IsValid)
+            // --- VALIDATION ---
+            if (!ModelState.IsValid) // Kiểm tra validation từ ViewModel (Annotations)
             {
-                _logger.LogWarning("ConfirmBooking failed: ModelState is invalid.");
-                await ReloadViewModelForRetry(model);
+                _logger.LogWarning("ConfirmBooking failed: ModelState is invalid. Errors: {ModelStateErrors}", GetModelStateErrors(ModelState));
+                await ReloadViewModelForRetry(model, "Dữ liệu nhập không hợp lệ. Vui lòng kiểm tra lại.");
                 return View("SelectSeats", model);
             }
             if (model.Passengers == null || !model.Passengers.Any())
             {
-                ModelState.AddModelError("", "Danh sách hành khách không được rỗng.");
-                _logger.LogWarning("ConfirmBooking failed: Passenger list is empty.");
-                await ReloadViewModelForRetry(model);
+                await ReloadViewModelForRetry(model, "Danh sách hành khách không được rỗng.");
                 return View("SelectSeats", model);
             }
 
-            // Lấy danh sách SỐ GHẾ (string) mà người dùng đã chọn từ các input ẩn
-            var selectedSeatNumbers = model.Passengers
-                                            .Select(p => p.SelectedSeat)
-                                            .Where(s => !string.IsNullOrEmpty(s))
-                                            .ToList();
+            var selectedSeatIds = model.Passengers
+                                        .Where(p => p.SelectedSeatId.HasValue)
+                                        .Select(p => p.SelectedSeatId.Value)
+                                        .ToList();
 
-            // Kiểm tra số lượng ghế chọn có đủ không
-            if (selectedSeatNumbers.Count != model.Passengers.Count)
+            if (selectedSeatIds.Count != model.Passengers.Count)
             {
-                ModelState.AddModelError("", $"Vui lòng chọn đủ {model.Passengers.Count} ghế cho tất cả hành khách.");
-                _logger.LogWarning("ConfirmBooking failed: Not enough seats selected. Needed: {Needed}, Selected: {Selected}", model.Passengers.Count, selectedSeatNumbers.Count);
-                await ReloadViewModelForRetry(model);
+                await ReloadViewModelForRetry(model, $"Vui lòng chọn đủ {model.Passengers.Count} ghế cho tất cả hành khách.");
                 return View("SelectSeats", model);
             }
-            // Kiểm tra ghế trùng lặp trong danh sách người dùng chọn
-            if (selectedSeatNumbers.Distinct().Count() != selectedSeatNumbers.Count)
+            if (selectedSeatIds.Distinct().Count() != selectedSeatIds.Count)
             {
-                ModelState.AddModelError("", "Lỗi: Bạn đã chọn trùng ghế cho nhiều hành khách.");
-                _logger.LogWarning("ConfirmBooking failed: Duplicate seat selection detected in input: {SelectedSeats}", string.Join(", ", selectedSeatNumbers));
-                await ReloadViewModelForRetry(model);
+                await ReloadViewModelForRetry(model, "Lỗi: Bạn đã chọn trùng ghế cho nhiều hành khách.");
                 return View("SelectSeats", model);
             }
 
@@ -244,150 +162,120 @@ namespace PBL3.Controllers
             if (user == null) return Challenge();
 
             using var transaction = await _context.Database.BeginTransactionAsync();
-            _logger.LogInformation("Database transaction started for booking Flight ID: {FlightId}.", model.FlightId);
+            _logger.LogInformation("Database transaction started for Flight ID: {FlightId}.", model.FlightId);
             try
             {
-                // Lấy chuyến bay (có tracking để update AvailableSeats)
-                var flight = await _context.Flights.FirstOrDefaultAsync(f => f.FlightId == model.FlightId);
-                if (flight == null) throw new InvalidOperationException($"Chuyến bay với ID {model.FlightId} không còn tồn tại.");
+                var flight = await _context.Flights
+                                      .Include(f => f.Sections) // Include Sections để lấy PriceMultiplier
+                                      .FirstOrDefaultAsync(f => f.FlightId == model.FlightId); // Có tracking
 
-                // **Lấy các Seat object từ DB dựa trên SeatNumber người dùng chọn (có tracking)**
+                if (flight == null) throw new InvalidOperationException($"Chuyến bay ID {model.FlightId} không còn tồn tại.");
+
+                // Lấy các Seat object từ DB dựa trên SeatId người dùng chọn (có tracking)
                 var dbSeatsToBook = await _context.Seats
-                                              .Where(s => s.FlightId == model.FlightId && selectedSeatNumbers.Contains(s.SeatNumber))
+                                              .Include(s => s.Section) // Include Section để lấy PriceMultiplier
+                                              .Where(s => s.Section.FlightId == model.FlightId && selectedSeatIds.Contains(s.SeatId))
                                               .ToListAsync();
 
-                // --- Kiểm tra logic nghiệp vụ quan trọng BÊN TRONG transaction ---
-
-                // 1. Kiểm tra lại số ghế trống tổng thể
-                if (flight.AvailableSeats < model.Passengers.Count)
+                // --- Kiểm tra logic nghiệp vụ bên trong transaction ---
+                if (dbSeatsToBook.Count != selectedSeatIds.Count)
                 {
-                    throw new InvalidOperationException($"Không đủ ghế trống (cần {model.Passengers.Count}, chỉ còn {flight.AvailableSeats}).");
+                    var foundSeatIds = dbSeatsToBook.Select(s => s.SeatId);
+                    var missingSeatIds = selectedSeatIds.Except(foundSeatIds);
+                    throw new InvalidOperationException($"Các ghế với ID: {string.Join(", ", missingSeatIds)} không hợp lệ hoặc không tồn tại.");
                 }
 
-                // 2. Kiểm tra xem có lấy đủ số ghế từ DB không (số ghế gửi lên có tồn tại không)
-                if (dbSeatsToBook.Count != selectedSeatNumbers.Count)
-                {
-                    var foundSeatNumbers = dbSeatsToBook.Select(s => s.SeatNumber);
-                    var missingSeats = selectedSeatNumbers.Except(foundSeatNumbers);
-                    _logger.LogWarning("ConfirmBooking failed: Some selected seats not found in DB. Missing: {MissingSeats}", string.Join(", ", missingSeats));
-                    throw new InvalidOperationException($"Các số ghế sau không hợp lệ hoặc không tồn tại trên chuyến bay này: {string.Join(", ", missingSeats)}");
-                }
-
-                // 3. Kiểm tra trạng thái 'Available' của từng ghế sẽ đặt
+                decimal calculatedTotalPrice = 0;
                 foreach (var seatToBook in dbSeatsToBook)
                 {
                     if (seatToBook.Status != "Available")
                     {
-                        _logger.LogWarning("ConfirmBooking failed: Seat {SeatNumber} (ID: {SeatId}) is not Available (Status: {Status}).", seatToBook.SeatNumber, seatToBook.SeatId, seatToBook.Status);
-                        throw new InvalidOperationException($"Ghế {seatToBook.SeatNumber} đã được người khác đặt hoặc không khả dụng. Vui lòng chọn lại.");
+                        throw new InvalidOperationException($"Ghế {seatToBook.SeatNumber} (ID: {seatToBook.SeatId}) đã được người khác đặt hoặc không khả dụng.");
                     }
-                    // Cập nhật trạng thái ghế -> Booked
-                    seatToBook.Status = "Booked";
-                    _context.Update(seatToBook); // Đánh dấu để EF cập nhật khi SaveChanges
-                    _logger.LogInformation("Seat {SeatNumber} (ID: {SeatId}) status marked as Booked.", seatToBook.SeatNumber, seatToBook.SeatId);
+                    seatToBook.Status = "Booked"; // Cập nhật trạng thái
+                    _context.Update(seatToBook);
+
+                    // Tính giá cho ghế này
+                    if (seatToBook.Section == null) throw new InvalidOperationException($"Lỗi: Ghế {seatToBook.SeatNumber} không thuộc Section nào.");
+                    calculatedTotalPrice += flight.Price * seatToBook.Section.PriceMultiplier;
                 }
 
-                // --- Tạo các vé mới ---
-                List<Ticket> createdTickets = new List<Ticket>();
-                decimal calculatedTotalPrice = 0;
-
-                // Lặp qua thông tin hành khách mà người dùng gửi lên
-                foreach (var passengerInfo in model.Passengers)
+                // Tạo các vé mới
+                var createdTickets = new List<Ticket>();
+                for (int i = 0; i < model.Passengers.Count; i++)
                 {
-                    // Tìm Seat object tương ứng với SeatNumber của hành khách này từ list dbSeatsToBook đã lấy
-                    var correspondingDbSeat = dbSeatsToBook.FirstOrDefault(s => s.SeatNumber == passengerInfo.SelectedSeat);
-                    if (correspondingDbSeat == null) // Kiểm tra lại cho chắc chắn (dù khó xảy ra nếu logic trước đúng)
-                    {
-                        throw new InvalidOperationException($"Lỗi nội bộ: Không tìm thấy chi tiết ghế cho số ghế {passengerInfo.SelectedSeat}.");
-                    }
+                    var passengerInfo = model.Passengers[i];
+                    var correspondingDbSeat = dbSeatsToBook.FirstOrDefault(s => s.SeatId == passengerInfo.SelectedSeatId);
+                    if (correspondingDbSeat == null) throw new InvalidOperationException($"Lỗi: Không tìm thấy thông tin DB cho ghế đã chọn của hành khách {passengerInfo.FullName}.");
 
-                    // Tạo đối tượng Ticket mới
                     var newTicket = new Ticket
                     {
-                        PassengerId = user.Id, // Gán vé cho người đang đăng nhập đặt vé
+                        PassengerId = user.Id, // Vé này do user hiện tại đặt
                         FlightId = flight.FlightId,
-                        SeatId = correspondingDbSeat.SeatId, // *** GÁN SeatId TỪ dbSeat TƯƠNG ỨNG ***
-                        Price = flight.Price, // Lấy giá cơ sở (TODO: Tính giá theo loại ghế/hạng nếu cần)
+                        SeatId = correspondingDbSeat.SeatId,
+                        SectionId = correspondingDbSeat.SectionId,
+                        Price = flight.Price * correspondingDbSeat.Section.PriceMultiplier, // Giá vé cuối cùng
                         OrderTime = DateTime.UtcNow,
-                        Status = "Booked",
-                        SectionId = correspondingDbSeat.SectionId // Lấy SectionId từ ghế (nếu có)
+                        Status = TicketStatus.Pending_Book,
+                        // Thông tin hành khách thực tế có thể lưu riêng nếu cần, hoặc dùng FullName, Age từ user
+                        // PassengerNameForTicket = passengerInfo.FullName, // Ví dụ
+                        // PassengerAgeForTicket = passengerInfo.Age,       // Ví dụ
                     };
-
-                    _context.Tickets.Add(newTicket); // Thêm vé mới vào context
-                    createdTickets.Add(newTicket);   // Thêm vào list để lấy ID sau này
-                    calculatedTotalPrice += newTicket.Price; // Tính tổng giá
-
-                    _logger.LogInformation("Ticket object created for Passenger: {PassengerName}, SeatID: {SeatId} (Number: {SeatNumber})",
-                        passengerInfo.FullName, correspondingDbSeat.SeatId, correspondingDbSeat.SeatNumber);
+                    _context.Tickets.Add(newTicket);
+                    createdTickets.Add(newTicket);
                 }
 
-                // --- Cập nhật số ghế trống của chuyến bay ---
-                flight.AvailableSeats -= model.Passengers.Count;
-                _logger.LogInformation("Flight {FlightId} AvailableSeats updated to {AvailableSeats}", flight.FlightId, flight.AvailableSeats);
-                // Không cần _context.Update(flight) vì flight đang được DbContext theo dõi
+                // Cập nhật số ghế trống của chuyến bay
+                flight.AvailableSeats = await _context.Seats.CountAsync(s => s.Section.FlightId == flight.FlightId && s.Status == "Available");
+                // flight.AvailableSeats -= model.Passengers.Count; // Cách cũ nếu không quản lý từng ghế
 
-                // --- Lưu tất cả thay đổi vào Database ---
-                await _context.SaveChangesAsync(); // Lưu Seats đã update và Tickets mới
-
-                // --- Hoàn tất Transaction ---
+                await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
-                _logger.LogInformation("Booking transaction committed successfully. {TicketCount} tickets created for Flight ID {FlightId}.", createdTickets.Count, model.FlightId);
+                _logger.LogInformation("Booking transaction committed. {TicketCount} tickets for Flight ID {FlightId}.", createdTickets.Count, model.FlightId);
 
-                // --- Chuyển hướng đến trang xác nhận ---
-                TempData["SuccessMessage"] = $"Đặt vé thành công cho {createdTickets.Count} hành khách!";
-                // Lấy ID của vé đầu tiên làm tham số chuyển hướng (có thể thay đổi nếu muốn hiển thị trang tổng hợp)
+                TempData["SuccessMessage"] = $"Đặt vé thành công cho {createdTickets.Count} hành khách! Tổng tiền: {calculatedTotalPrice:N0} VNĐ";
                 return RedirectToAction("Confirmation", new { ticketId = createdTickets.FirstOrDefault()?.TicketId ?? 0 });
+            }
+            catch (InvalidOperationException ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogWarning(ex, "Booking failed (InvalidOperationException) for Flight ID {FlightId}.", model.FlightId);
+                await ReloadViewModelForRetry(model, ex.Message);
+                return View("SelectSeats", model);
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Concurrency error during booking for Flight ID {FlightId}.", model.FlightId);
+                await ReloadViewModelForRetry(model, "Đã có lỗi xảy ra do dữ liệu bị thay đổi. Vui lòng thử lại.");
+                return View("SelectSeats", model);
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Generic error during booking for Flight ID {FlightId}.", model.FlightId);
+                await ReloadViewModelForRetry(model, "Đã xảy ra lỗi không mong muốn. Vui lòng thử lại sau.");
+                return View("SelectSeats", model);
+            }
+        }
 
-            }
-            catch (InvalidOperationException ex) // Bắt lỗi nghiệp vụ đã throw ở trên
-            {
-                await transaction.RollbackAsync();
-                _logger.LogWarning(ex, "Booking failed due to business rule violation during transaction for Flight ID {FlightId}.", model.FlightId);
-                ModelState.AddModelError("", ex.Message); // Hiển thị lỗi cụ thể cho người dùng
-                await ReloadViewModelForRetry(model); // Tải lại dữ liệu ghế mới nhất
-                return View("SelectSeats", model); // Quay lại trang chọn ghế
-            }
-            catch (DbUpdateConcurrencyException ex) // Bắt lỗi concurrency (có người khác sửa dữ liệu cùng lúc)
-            {
-                await transaction.RollbackAsync();
-                _logger.LogError(ex, "Concurrency error during booking transaction for Flight ID {FlightId}.", model.FlightId);
-                ModelState.AddModelError("", "Đã có lỗi xảy ra do dữ liệu bị thay đổi bởi người khác. Vui lòng thử lại.");
-                await ReloadViewModelForRetry(model);
-                return View("SelectSeats", model);
-            }
-            catch (DbUpdateException ex) // Bắt lỗi chung khi lưu vào DB
-            {
-                await transaction.RollbackAsync();
-                _logger.LogError(ex, "Database update error during booking transaction for Flight ID {FlightId}.", model.FlightId);
-                ModelState.AddModelError("", "Đã xảy ra lỗi khi lưu thông tin đặt vé. Vui lòng thử lại.");
-                await ReloadViewModelForRetry(model);
-                return View("SelectSeats", model);
-            }
-            catch (Exception ex) // Bắt các lỗi không mong muốn khác
-            {
-                await transaction.RollbackAsync();
-                _logger.LogError(ex, "Generic error during booking transaction for Flight ID {FlightId}.", model.FlightId);
-                ModelState.AddModelError("", "Đã xảy ra lỗi không mong muốn trong quá trình đặt vé. Vui lòng thử lại sau.");
-                await ReloadViewModelForRetry(model);
-                return View("SelectSeats", model);
-            }
-        } // Đóng action ConfirmBooking
-
-        // GET: Booking/Confirmation?ticketId=10 (Giữ nguyên code cũ)
+        // GET: Booking/Confirmation?ticketId=10
         [HttpGet]
         public async Task<IActionResult> Confirmation(int? ticketId)
         {
+            // ... (Giữ nguyên code cũ, đảm bảo Include các navigation property cần thiết) ...
+            // Đã thêm Include Seat và Section trong câu trả lời trước, kiểm tra lại
             _logger.LogInformation("Confirmation page requested for Ticket ID: {TicketId}", ticketId);
             if (ticketId == null) return BadRequest("Thiếu mã vé.");
 
             var ticket = await _context.Tickets
-                            .Include(t => t.Passenger)
+                            .Include(t => t.Passenger) // Passenger là người đặt vé
                             .Include(t => t.Flight).ThenInclude(f => f.DepartureAirport)
                             .Include(t => t.Flight).ThenInclude(f => f.ArrivalAirport)
-                            .Include(t => t.Seat)    // <<< ĐẢM BẢO CÓ INCLUDE NÀY
-                            .Include(t => t.Section) // <<< THÊM INCLUDE NÀY NẾU DÙNG SECTION
+                            .Include(t => t.Seat)    // Ghế cụ thể của vé này
+                            .Include(t => t.Section) // Section của ghế này
                             .AsNoTracking()
-                            .FirstOrDefaultAsync(t => t.TicketId == ticketId);
+                            .FirstOrDefaultAsync(t => t.TicketId == ticketId.Value);
 
             if (ticket == null)
             {
@@ -396,58 +284,83 @@ namespace PBL3.Controllers
             }
 
             var currentUser = await _userManager.GetUserAsync(User);
-            if (ticket.PassengerId != currentUser?.Id)
+            if (ticket.PassengerId != currentUser?.Id) // Vé phải thuộc người đang xem
             {
                 _logger.LogWarning("Authorization failed: User {UserId} attempted to view ticket {TicketId} owned by {OwnerId}", currentUser?.Id, ticketId, ticket.PassengerId);
-                return Forbid(); // Không cho xem vé người khác
+                return Forbid();
             }
+
+            // Nếu bạn muốn hiển thị thông tin của nhiều vé trong cùng một lần đặt (nếu có)
+            // thì cần logic khác, ví dụ truyền một OrderId hoặc tìm các vé có cùng OrderTime + PassengerId
+            // Hiện tại, chỉ hiển thị thông tin của 1 vé được truyền qua ticketId
 
             return View(ticket);
         }
 
 
-        // Hàm tải lại dữ liệu cho ViewModel khi cần quay lại View SelectSeats
-        private async Task ReloadViewModelForRetry(BookingViewModel model)
+        private async Task ReloadViewModelForRetry(BookingViewModel model, string errorMessage)
         {
-            _logger.LogInformation("Reloading ViewModel data for Flight ID: {FlightId} after error.", model.FlightId);
-            if (model.FlightId <= 0)
-            {
-                _logger.LogError("Cannot reload ViewModel: Invalid FlightId {FlightId}.", model.FlightId);
-                return;
-            }
+            _logger.LogInformation("Reloading ViewModel for Flight ID {FlightId} after error: {ErrorMessage}", model.FlightId, errorMessage);
+            ModelState.AddModelError("", errorMessage); // Thêm lỗi vào ModelState để View hiển thị
+
+            if (model.FlightId <= 0) return;
 
             var flight = await _context.Flights
                                        .Include(f => f.DepartureAirport)
                                        .Include(f => f.ArrivalAirport)
+                                       .Include(f => f.Sections)
+                                            .ThenInclude(sec => sec.Seats)
                                        .AsNoTracking()
                                        .FirstOrDefaultAsync(f => f.FlightId == model.FlightId);
-            var user = await _userManager.GetUserAsync(User);
-            var seatsQuery = _context.Seats.Where(s => s.FlightId == model.FlightId);
-            var seatsList = await seatsQuery.AsNoTracking().ToListAsync(); // Lấy về bộ nhớ
-
-            // Sắp xếp trong bộ nhớ
-            var sortedSeats = seatsList
-                           .OrderBy(s => s.SeatNumber?.Length ?? int.MaxValue)
-                           .ThenBy(s => int.TryParse(new string((s.SeatNumber ?? "").Where(char.IsDigit).ToArray()), out int r) ? r : int.MaxValue)
-                           .ThenBy(s => GetSeatColumnSortOrder(new string((s.SeatNumber ?? "").Where(char.IsLetter).ToArray())))
-                           .ToList();
-
+            var user = await _userManager.GetUserAsync(User); // Booker
 
             model.FlightInfo = flight;
-            model.BookerInfo = user;
-            model.AvailableSeats = sortedSeats.Select(s => MapSeatToViewModel(s)).ToList();
-            // **Quan trọng:** Giữ lại thông tin hành khách đã nhập từ model POST lên
-            // model.Passengers = model.Passengers; // Không cần gán lại chính nó
+            // model.BookerInfo = user; // BookerInfo đã có trong BookingViewModel
 
-            if (flight != null && model.Passengers != null)
+            var seatLayout = new List<SeatViewModel>();
+            if (flight?.Sections != null)
             {
-                model.EstimatedTotalPrice = flight.Price * model.Passengers.Count;
+                foreach (var section in flight.Sections.OrderBy(s => s.SectionName == "Thương gia" ? 0 : 1))
+                {
+                    var allSeatsInSection = await _context.Seats
+                                               .Where(s => s.SectionId == section.SectionId)
+                                               .OrderBy(s => s.Row)
+                                               .ThenBy(s => s.Column)
+                                               .ToListAsync();
+                    foreach (var dbSeat in allSeatsInSection)
+                    {
+                        seatLayout.Add(new SeatViewModel
+                        {
+                            SeatId = dbSeat.SeatId,
+                            SeatNumber = dbSeat.SeatNumber,
+                            Row = dbSeat.Row,
+                            Column = dbSeat.Column,
+                            Status = dbSeat.Status.ToString().ToLower(),
+                            SectionName = section.SectionName,
+                            CalculatedPrice = flight.Price * section.PriceMultiplier
+                        });
+                    }
+                }
             }
-            else
+            model.SeatsLayout = seatLayout.OrderBy(s => s.Row).ThenBy(s => s.Column).ToList();
+            model.FlightSections = flight?.Sections.Select(s => new SectionInfoViewModel { Name = s.SectionName, PriceMultiplier = s.PriceMultiplier }).ToList() ?? new List<SectionInfoViewModel>();
+
+            // Giữ lại thông tin hành khách đã nhập, nhưng xóa ghế đã chọn để họ chọn lại
+            if (model.Passengers != null)
             {
-                model.EstimatedTotalPrice = 0;
-                _logger.LogWarning("Could not recalculate EstimatedTotalPrice in ReloadViewModelForRetry.");
+                foreach (var p in model.Passengers)
+                {
+                    p.SelectedSeatId = null;
+                    p.SelectedSeatNumber = null;
+                }
             }
+        }
+
+        private string GetModelStateErrors(Microsoft.AspNetCore.Mvc.ModelBinding.ModelStateDictionary modelState)
+        {
+            return string.Join("; ", modelState.Values
+                                        .SelectMany(x => x.Errors)
+                                        .Select(x => x.ErrorMessage));
         }
     }
 }

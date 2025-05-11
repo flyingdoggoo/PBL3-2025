@@ -1,61 +1,81 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - PBL3</title>
-    <script type="importmap"></script>
+    <title>@ViewData["Title"] - Aggin Airlines</title> @* ĐỔI TÊN APP *@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/PBL3.styles.css" asp-append-version="true" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">PBL3</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+    <header class="sticky-top shadow-sm main-header-aggin">
+        @* Đổi class để custom riêng *@
+        <nav class="navbar navbar-expand-lg">
+            <div class="container">
+                <a class="navbar-brand d-flex align-items-center" asp-area="" asp-controller="Home" asp-action="Index">
+                    <img src="~/images/aggin-airlines-logo.png" alt="Aggin Airlines Logo" class="me-2 main-logo-aggin"> @* Đổi class logo *@
+                    <span class="fw-bold fs-4 logo-text-aggin">Aggin Airlines</span> @* Đổi class text *@
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMainContent" aria-controls="navbarMainContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
+                <div class="collapse navbar-collapse" id="navbarMainContent">
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link active fw-medium" asp-area="" asp-controller="Home" asp-action="Index"><i class="fas fa-home me-1"></i>Trang chủ</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                            <a class="nav-link fw-medium" asp-area="" asp-controller="Home" asp-action="Index" fragment="search-form-section-anchor"><i class="fas fa-search me-1"></i>Tìm chuyến bay</a> @* Sửa lại link trỏ về form tìm kiếm trên trang chủ *@
                         </li>
-                        @if (User.Identity.IsAuthenticated)
+                        <li class="nav-item">
+                            <a class="nav-link fw-medium" href="#"><i class="fas fa-tags me-1"></i>Khuyến mãi</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link fw-medium" asp-controller="Home" asp-action="Privacy"><i class="fas fa-shield-alt me-1"></i>Chính sách</a> @* THÊM NÚT CHÍNH SÁCH *@
+                        </li>
+
+                        @if (User.Identity != null && User.Identity.IsAuthenticated)
                         {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="Account" asp-action="Profile">Thông tin cá nhân</a>
-                            </li>
-                        }
-                        @* --- THÊM LINK LỊCH SỬ ĐẶT VÉ --- *@
-                        @if (!User.IsInRole("Admin") && !User.IsInRole("Employee")) // Chỉ hiện cho Passenger
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="BookingHistory" asp-action="Index">Lịch sử đặt vé</a>
-                            </li>
-                        }
-                    </ul>
-                    <ul class="navbar-nav">
-                        @if (User.Identity.IsAuthenticated)
-                        {
-                            <li class="nav-item">
-                                <form asp-controller="Account" asp-action="Logout" method="post" class="form-inline">
-                                    <button type="submit" class="btn btn-link nav-link text-dark">Log out</button>
-                                </form>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle fw-medium" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-user-circle me-1"></i> @User.Identity.Name
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                    <li><a class="dropdown-item" asp-controller="Account" asp-action="Profile"><i class="fas fa-address-card me-2"></i>Hồ sơ của tôi</a></li>
+                                    @if (!User.IsInRole("Admin") && !User.IsInRole("Employee"))
+                                    {
+                                        <li><a class="dropdown-item" asp-controller="BookingHistory" asp-action="Index"><i class="fas fa-history me-2"></i>Lịch sử đặt vé</a></li>
+                                    }
+                                    @if (User.IsInRole("Admin"))
+                                    {
+                                        <li><a class="dropdown-item" asp-controller="SystemManager" asp-action="Index"><i class="fas fa-tachometer-alt me-2"></i>Trang quản trị</a></li>
+                                    }
+                                    else if (User.IsInRole("Employee"))
+                                    {
+                                        <li><a class="dropdown-item" asp-controller="Employee" asp-action="Index"><i class="fas fa-briefcase me-2"></i>Trang nhân viên</a></li>
+                                    }
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                                            <button type="submit" class="dropdown-item text-danger"><i class="fas fa-sign-out-alt me-2"></i>Đăng xuất</button>
+                                        </form>
+                                    </li>
+                                </ul>
                             </li>
                         }
                         else
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="Account" asp-action="Login">Log in</a>
+                                <a class="nav-link fw-medium btn btn-outline-light btn-sm px-3 me-2 auth-btn-custom" asp-controller="Account" asp-action="Login"><i class="fas fa-sign-in-alt me-1"></i>Đăng nhập</a> @* Đổi class *@
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="Account" asp-action="Register">Sign up</a>
+                                <a class="nav-link fw-medium btn btn-warning btn-sm px-3 text-dark auth-btn-custom" asp-controller="Account" asp-action="Register"><i class="fas fa-user-plus me-1"></i>Đăng ký</a> @* Đổi class *@
                             </li>
                         }
                     </ul>
@@ -63,27 +83,39 @@
             </div>
         </nav>
     </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
+    <div class="main-content-area @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "home-page-background" : "")">
+        @* Thêm class cho background trang home *@
+        <div class="container mt-4">
+            <main role="main" class="pb-3">
+                @RenderBody()
+            </main>
+        </div>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2025 - PBL3 - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
-    </footer>
+    @* <footer class="main-footer border-top pt-4 pb-4 text-muted aggin-footer"> *@
+    @*     @* Thêm class custom *@ 
+    @*     <div class="container text-center"> *@
+    @*         <a class="navbar-brand mb-3 d-inline-block" asp-area="" asp-controller="Home" asp-action="Index"> *@
+    @*             <img src="~/images/aggin-airlines-logo.png" alt="Aggin Airlines Logo" class="footer-logo-aggin"> @* Class mới *@ 
+    @*         </a> *@
+    @*         <p class="small mb-1">© @DateTime.Now.Year - Aggin Airlines. All Rights Reserved.</p> *@
+    @*         <p class="small"> *@
+    @*             <a asp-area="" asp-controller="Home" asp-action="Privacy" class="footer-link me-3">Chính sách Bảo mật & Đặt vé</a> *@
+    @*             <a href="#" class="footer-link">Điều khoản Sử dụng</a> *@
+    @*         </p> *@
+    @*         <div class="social-icons mt-3"> *@
+    @*             <a href="#" class="social-icon me-2"><i class="fab fa-facebook-f fa-lg"></i></a> *@
+    @*             <a href="#" class="social-icon me-2"><i class="fab fa-instagram fa-lg"></i></a> *@
+    @*             <a href="#" class="social-icon me-2"><i class="fab fa-youtube fa-lg"></i></a> *@
+    @*             <a href="#" class="social-icon"><i class="fab fa-tiktok fa-lg"></i></a> *@
+    @*         </div> *@
+    @*     </div> *@
+    @* </footer> *@
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
-<!-- jQuery -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-<!-- Flatpickr -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/vn.js"></script>

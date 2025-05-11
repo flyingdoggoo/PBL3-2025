@@ -119,7 +119,24 @@
                     </button>
                 </form>
             }
-            else
+            @* --- THÊM NÚT XÁC NHẬN ĐẶT VÉ --- *@
+            else if (Model.Status == TicketStatus.Pending_Book && (User.IsInRole("Admin") || User.IsInRole("Employee")))
+            {
+                <form asp-action="ConfirmBookingByEmployee" asp-route-id="@Model.TicketId" method="post" class="d-inline" id="confirmBookingForm">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check-circle me-1"></i> Xác nhận Đặt vé
+                    </button>
+                </form>
+                @* --- NÚT HỦY PENDING_BOOK CHO ADMIN/EMPLOYEE --- *@
+                <form asp-controller="Bookings" asp-action="CancelPendingBookingByAnyone" asp-route-id="@Model.TicketId" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn HỦY yêu cầu đặt vé này (thay mặt khách)?');">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-times-circle me-1"></i> Hủy (Pending)
+                    </button>
+                </form>
+            }
+            else 
             {
                 <small class="text-muted fst-italic">Không có hành động hủy nào cho trạng thái này.</small>
             }
@@ -142,4 +159,29 @@ else
 {
     <div class="alert alert-warning">Không tìm thấy thông tin vé.</div>
     <a asp-controller="Bookings" asp-action="Index" class="btn btn-primary">Về trang quản lý vé</a>
+}
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const confirmBookingForm = document.getElementById('confirmBookingForm');
+            if (confirmBookingForm) {
+                confirmBookingForm.addEventListener('submit', function (event) {
+                    event.preventDefault(); // Ngăn form submit ngay
+
+                    // Hiện alert box xác nhận
+                    if (confirm("CẢNH BÁO:\n\nBạn có chắc chắn muốn xác nhận đặt vé này không?\n\n" +
+                                "Vui lòng đảm bảo các điều kiện sau:\n" +
+                                "1. Khách hàng đã hoàn tất thanh toán tiền vé.\n" +
+                                "2. Thông tin hành khách cung cấp là chính xác và đầy đủ.\n\n" +
+                                "Hành động này sẽ chuyển trạng thái vé thành 'Đã đặt' và trừ số ghế trống.")) {
+                        // Nếu người dùng nhấn OK, thì submit form
+                        this.submit();
+                    } else {
+                        // Nếu người dùng nhấn Cancel, không làm gì cả
+                        return false;
+                    }
+                });
+            }
+        });
+    </script>
 }

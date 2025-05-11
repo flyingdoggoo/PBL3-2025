@@ -1,3 +1,18 @@
-﻿@{
-    Layout = "_AdminLayout";
+﻿@* File: Views/Bookings/_ViewStart.cshtml *@
+@{
+    if (User.Identity != null && User.Identity.IsAuthenticated)
+    {
+        if (User.IsInRole("Admin"))
+        {
+            Layout = "_AdminLayout";
+        }
+        else if (User.IsInRole("Employee"))
+        {
+            Layout = "_EmployeeLayout";
+        }
+    }
+    else
+    {
+        Layout = "_Layout"; // Layout mặc định khi chưa đăng nhập
+    }
 }

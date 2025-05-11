@@ -1,0 +1,159 @@
+﻿@* File: Views/Shared/_EmployeeLayout.cshtml *@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Employee Panel</title> @* Đổi tiêu đề *@
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/PBL3.styles.css" asp-append-version="true" />
+    @* Bạn có thể tạo file css/employee.css nếu muốn style riêng cho Employee *@
+    @* <link rel="stylesheet" href="~/css/employee.css" asp-append-version="true" /> *@
+
+    <style>
+        body {
+            display: flex;
+            min-height: 100vh;
+            flex-direction: column;
+        }
+
+        .main-content {
+            flex: 1;
+            padding-top: 56px; /* Chiều cao của navbar */
+        }
+
+        /* Navbar tùy chỉnh cho Employee (có thể dùng chung style với Admin hoặc tùy chỉnh) */
+        .navbar-employee { /* Đổi tên class nếu muốn style khác */
+            background: linear-gradient(90deg, #17a2b8 10%, #117a8b 100%); /* Ví dụ: Gradient màu xanh lam */
+            box-shadow: 0 .15rem 1.75rem 0 rgba(58,59,69,.15) !important;
+        }
+
+            .navbar-employee .navbar-brand,
+            .navbar-employee .nav-link,
+            .navbar-employee .dropdown-toggle { /* Áp dụng cho cả dropdown toggle */
+                color: rgba(255,255,255,.9) !important; /* Màu chữ sáng hơn một chút */
+            }
+
+            .navbar-employee .navbar-brand {
+                font-weight: bold;
+            }
+
+            .navbar-employee .nav-link:hover,
+            .navbar-employee .nav-link.active,
+            .navbar-employee .dropdown-toggle:hover, /* Hover cho dropdown */
+            .navbar-employee .dropdown-item:hover { /* Hover cho item trong dropdown */
+                color: #fff !important;
+                background-color: rgba(255, 255, 255, 0.1); /* Nền mờ khi hover item */
+            }
+
+            .navbar-employee .dropdown-menu { /* Style cho dropdown menu */
+                background-color: #117a8b; /* Nền tối hơn cho dropdown */
+                border: 1px solid rgba(255,255,255,.15);
+            }
+
+            .navbar-employee .dropdown-item {
+                color: rgba(255,255,255,.8);
+            }
+
+
+            .navbar-employee .navbar-toggler {
+                border-color: rgba(255,255,255,.1);
+            }
+
+            .navbar-employee .navbar-toggler-icon {
+                background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.55%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+            }
+
+        .footer-employee { /* Đổi tên class nếu muốn style khác */
+            background-color: #e9ecef;
+            padding: 1rem 0;
+            font-size: 0.9em;
+            margin-top: auto;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-employee fixed-top border-bottom box-shadow">
+            @* Sử dụng class navbar-employee *@
+            <div class="container-fluid">
+                <a class="navbar-brand" asp-area="" asp-controller="EmployeeDashboard" asp-action="Index">
+                    <i class="fas fa-user-tie me-1"></i> Employee Panel
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="EmployeeDashboard" asp-action="Index"><i class="fas fa-fw fa-tachometer-alt me-1"></i>Dashboard</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Flights" asp-action="Index"><i class="fas fa-fw fa-plane me-1"></i>Chuyến bay</a>
+                        </li>
+                        @* MỤC QUẢN LÝ NHÂN VIÊN ĐÃ ĐƯỢC XÓA *@
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="bookingsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-fw fa-ticket-alt me-1"></i>Đặt vé
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="bookingsDropdown">
+                                @* Bỏ dropdown-menu-dark nếu dùng màu nền navbar sáng *@
+                                <li><a class="dropdown-item" asp-controller="Bookings" asp-action="Index"><i class="fas fa-list-ul fa-fw me-2"></i>DS Đặt vé</a></li>
+                                <li><a class="dropdown-item" asp-controller="Bookings" asp-action="PendingCancellations"><i class="fas fa-hourglass-half fa-fw me-2"></i>DS Chờ hủy</a></li>
+                            </ul>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Statistics" asp-action="Revenue"><i class="fas fa-fw fa-chart-line me-1"></i>Thống kê</a>
+                        </li>
+                    </ul>
+                    <ul class="navbar-nav">
+                        @if (User.Identity != null && User.Identity.IsAuthenticated)
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-user fa-fw me-1"></i> @(User.FindFirst("FullName")?.Value ?? User.Identity.Name) @* Ưu tiên FullName Claim *@
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                    @* Bỏ dropdown-menu-dark *@
+                                    <li><a class="dropdown-item" asp-controller="Account" asp-action="Profile"><i class="fas fa-user-circle fa-fw me-2"></i>Hồ sơ</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Account" asp-action="ChangePassword"><i class="fas fa-key fa-fw me-2"></i>Đổi mật khẩu</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="dropdown-item"><i class="fas fa-sign-out-alt fa-fw me-2"></i>Đăng xuất</button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
+                        @* Không cần else vì Employee phải đăng nhập mới vào được trang này *@
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="main-content container-fluid mt-4">
+        @* Giữ nguyên container-fluid nếu muốn full width *@
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="footer-employee text-center">
+        @* Sử dụng class footer-employee *@
+        <div class="container">
+            Bản quyền © @DateTime.Now.Year - Employee Portal - PBL3 Group
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

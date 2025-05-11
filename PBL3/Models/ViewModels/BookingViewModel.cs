@@ -47,7 +47,5 @@ namespace PBL3.Models.ViewModels
     {
         public string Name { get; set; }
         public decimal PriceMultiplier { get; set; }
-        // public int StartRow {get; set;} // Nếu bạn muốn định nghĩa hàng bắt đầu/kết thúc
-        // public int EndRow {get; set;}
     }
 }

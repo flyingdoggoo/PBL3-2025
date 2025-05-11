@@ -1,120 +1,75 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using PBL3.Data;
-using PBL3.Models;
-
-namespace PBL3.Controllers
-{
-    public class HomeController : Controller
-    {
-        private readonly ILogger<HomeController>
-    _logger;
-    private readonly ApplicationDbContext _context;
-
-    public HomeController(ILogger<HomeController>
-        logger, ApplicationDbContext context)
-        {
-        _logger = logger;
-        _context = context;
-        }
-
-        public async Task<IActionResult>
-            Index()
-            {
-            var viewModel = new FlightSearchViewModel
-            {
-            TripType = "roundtrip", // Mặc định là khứ hồi
-            DepartureDate = DateTime.Now,
-            PassengerCount = 1,
-            Airports = await GetAirportsAsync()
-            };
-
-            return View(viewModel);
-            }
-
-            [HttpPost]
-            public async Task<IActionResult>
-                Search(FlightSearchViewModel model)
-                {
-                if (!ModelState.IsValid)
-                {
-                model.Airports = await GetAirportsAsync();
-                return View("Index", model);
-                }
-
-                // Kiểm tra điểm đi và điểm đến không được trùng nhau
-                if (model.DepartureAirportId == model.ArrivalAirportId)
-                {
-                ModelState.AddModelError("ArrivalAirportId", "Điểm đến không được trùng với điểm đi");
-                model.Airports = await GetAirportsAsync();
-                return View("Index", model);
-                }
-
-                // Kiểm tra ngày đi phải trước ngày về (nếu là khứ hồi)
-                if (model.TripType == "roundtrip" && model.ReturnDate.HasValue && model.DepartureDate > model.ReturnDate.Value)
-                {
-                ModelState.AddModelError("ReturnDate", "Ngày về phải sau ngày đi");
-                model.Airports = await GetAirportsAsync();
-                return View("Index", model);
-                }
-
-                // Tìm kiếm chuyến bay đi
-                model.OutboundFlights = await _context.Flights
-                .Include(f => f.DepartureAirport)
-                .Include(f => f.ArrivalAirport)
-                .Where(f => f.StartingDestination == model.DepartureAirportId &&
-                f.ReachingDestination == model.ArrivalAirportId &&
-                f.StartingTime.Date == model.DepartureDate.Date)
-                .ToListAsync();
-
-                // Tìm kiếm chuyến bay về (nếu là khứ hồi)
-                if (model.TripType == "roundtrip" && model.ReturnDate.HasValue)
-                {
-                model.ReturnFlights = await _context.Flights
-                .Include(f => f.DepartureAirport)
-                .Include(f => f.ArrivalAirport)
-                .Where(f => f.StartingDestination == model.ArrivalAirportId &&
-                f.ReachingDestination == model.DepartureAirportId &&
-                f.StartingTime.Date == model.ReturnDate.Value.Date)
-                .ToListAsync();
-                }
-
-                model.Airports = await GetAirportsAsync();
-                Console.WriteLine($"Returning view with {model.OutboundFlights?.Count ?? 0} outbound flights");
-                return View("SearchResults", model);
-                }
-
-                private async Task<List<SelectListItem>> GetAirportsAsync()
-        {
-            var airports = await _context.Airports
-                .Where(a => a.Country == "Việt Nam")
-                .OrderBy(a => a.City)
-                .ToListAsync();
-
-
-            return airports.Select(a => new SelectListItem
-            {
-                Value = a.Id.ToString(),
-                Text = $"{a.City} ({a.Code}), {a.Country}"
-            }).ToList();
-        }
-
-        public IActionResult Privacy()
-        {
-            return View();
-        }
-
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
-        {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-        }
-    }
+﻿@{
+    ViewData["Title"] = "Chính Sách Bảo Mật và Điều Khoản Đặt Vé";
 }
+<div class="container py-5">
+    <h1 class="display-5 fw-bold mb-4">@ViewData["Title"]</h1>
+
+    <section class="mb-5">
+        <h2 class="fs-4 fw-semibold mb-3">I. Chính Sách Bảo Mật Thông Tin</h2>
+        <p>Chúng tôi cam kết bảo vệ thông tin cá nhân của quý khách. Trang web này thu thập thông tin cá nhân (như tên, email, số điện thoại, địa chỉ) chỉ khi quý khách tự nguyện cung cấp qua các biểu mẫu đăng ký, đặt vé hoặc liên hệ.</p>
+
+        <h5 class="mt-4">1. Mục đích thu thập thông tin:</h5>
+        <ul>
+            <li>Xử lý đặt vé và cung cấp các dịch vụ liên quan đến chuyến bay.</li>
+            <li>Liên lạc và hỗ trợ quý khách trong quá trình sử dụng dịch vụ.</li>
+            <li>Gửi thông tin về các chương trình khuyến mãi, ưu đãi (nếu quý khách đồng ý).</li>
+            <li>Nâng cao chất lượng dịch vụ và trải nghiệm người dùng.</li>
+        </ul>
+
+        <h5 class="mt-4">2. Phạm vi sử dụng thông tin:</h5>
+        <p>Thông tin cá nhân của quý khách sẽ chỉ được sử dụng trong nội bộ công ty và các đối tác trực tiếp liên quan đến việc cung cấp dịch vụ bay (ví dụ: hãng hàng không). Chúng tôi không bán, chia sẻ hoặc tiết lộ thông tin của quý khách cho bên thứ ba nào khác mà không có sự đồng ý của quý khách, trừ khi được yêu cầu bởi pháp luật.</p>
+
+        <h5 class="mt-4">3. Thời gian lưu trữ thông tin:</h5>
+        <p>Thông tin cá nhân của quý khách sẽ được lưu trữ cho đến khi có yêu cầu hủy bỏ từ quý khách hoặc khi pháp luật yêu cầu.</p>
+
+        <h5 class="mt-4">4. Cam kết bảo mật:</h5>
+        <p>Chúng tôi áp dụng các biện pháp kỹ thuật và tổ chức phù hợp để bảo vệ thông tin cá nhân của quý khách khỏi mất mát, truy cập trái phép, sử dụng sai mục đích, thay đổi hoặc phá hủy.</p>
+
+        <h5 class="mt-4">5. Quyền của Khách hàng:</h5>
+        <p>Quý khách có quyền yêu cầu truy cập, chỉnh sửa hoặc xóa thông tin cá nhân của mình. Vui lòng liên hệ với chúng tôi qua thông tin được cung cấp trên website để thực hiện các quyền này.</p>
+    </section>
+
+    <hr class="my-5">
+
+    <section>
+        <h2 class="fs-4 fw-semibold mb-3">II. Điều Khoản và Điều Kiện Đặt Vé</h2>
+
+        <h5 class="mt-4">1. Quy định chung:</h5>
+        <ul>
+            <li>Việc đặt vé máy bay qua website của chúng tôi đồng nghĩa với việc quý khách chấp nhận tất cả các điều khoản và điều kiện này.</li>
+            <li>Quý khách phải cung cấp thông tin chính xác và đầy đủ khi đặt vé. Chúng tôi không chịu trách nhiệm cho bất kỳ vấn đề nào phát sinh do thông tin sai lệch.</li>
+            <li>Giá vé hiển thị trên website là giá cơ bản và có thể chưa bao gồm thuế, phí sân bay và các phụ phí khác. Giá cuối cùng sẽ được hiển thị trước khi quý khách xác nhận thanh toán.</li>
+        </ul>
+
+        <h5 class="mt-4">2. Thanh toán:</h5>
+        <ul>
+            <li>Quý khách có thể thanh toán bằng các phương thức được chấp nhận trên website (ví dụ: thẻ tín dụng, chuyển khoản ngân hàng, ví điện tử).</li>
+            <li>Việc đặt vé chỉ được xác nhận sau khi thanh toán thành công.</li>
+        </ul>
+
+        <h5 class="mt-4">3. Thay đổi, Hoàn, Hủy vé:</h5>
+        <ul>
+            <li>Chính sách thay đổi, hoàn, hủy vé phụ thuộc vào điều kiện của từng hạng vé và quy định của hãng hàng không.</li>
+            <li>Quý khách vui lòng đọc kỹ điều kiện vé trước khi hoàn tất đặt chỗ.</li>
+            <li>Phí thay đổi, hoàn, hủy vé (nếu có) sẽ được áp dụng theo quy định.</li>
+            <li>Để yêu cầu thay đổi hoặc hoàn/hủy vé, vui lòng liên hệ bộ phận hỗ trợ khách hàng của chúng tôi.</li>
+        </ul>
+
+        <h5 class="mt-4">4. Hành lý:</h5>
+        <ul>
+            <li>Quy định về hành lý xách tay và hành lý ký gửi tuân theo quy định của từng hãng hàng không.</li>
+            <li>Thông tin chi tiết về quy định hành lý thường được cung cấp trong quá trình đặt vé hoặc trên website của hãng hàng không.</li>
+        </ul>
+
+        <h5 class="mt-4">5. Trách nhiệm:</h5>
+        <ul>
+            <li>Chúng tôi đóng vai trò là đại lý bán vé và không chịu trách nhiệm trực tiếp về các vấn đề liên quan đến vận hành chuyến bay (ví dụ: chậm, hủy chuyến, thay đổi lịch bay) do hãng hàng không gây ra. Tuy nhiên, chúng tôi sẽ cố gắng hỗ trợ quý khách trong khả năng của mình.</li>
+            <li>Quý khách có trách nhiệm kiểm tra và đảm bảo có đầy đủ giấy tờ tùy thân hợp lệ (CMND/CCCD, hộ chiếu, visa nếu cần) khi làm thủ tục bay.</li>
+        </ul>
+        <h5 class="mt-4">6. Thay đổi Điều khoản:</h5>
+        <p>Chúng tôi có quyền thay đổi các điều khoản và điều kiện này bất cứ lúc nào mà không cần thông báo trước. Phiên bản cập nhật sẽ được đăng tải trên website.</p>
+
+        <p class="mt-4">Nếu có bất kỳ thắc mắc nào, vui lòng liên hệ với chúng tôi để được giải đáp.</p>
+        <p><em>Cập nhật lần cuối: @DateTime.Now.ToString("dd/MM/yyyy")</em></p>
+    </section>
+</div>

@@ -1,143 +1,443 @@
-﻿html {
-  font-size: 14px;
+﻿/* === BIẾN MÀU TOÀN CỤC === */
+:root {
+    --aggin-primary-blue: #0D6EFD; /* Bootstrap Primary Blue */
+    --aggin-secondary-blue: #004080; /* Xanh dương đậm hơn */
+    --aggin-accent-gold: #FFC107; /* Bootstrap Warning Yellow/Gold */
+    --aggin-light-text: #f8f9fa; /* Màu chữ sáng (Bootstrap text-light) */
+    --aggin-dark-text: #212529; /* Màu chữ tối (Bootstrap text-dark) */
+    --aggin-muted-text: #6c757d; /* Màu chữ mờ (Bootstrap text-muted) */
+    --aggin-header-gradient: linear-gradient(120deg, #0D6EFD 0%, #5badff 50%, #FFFFFF 90%); /* Gradient cho header (Xanh -> Trắng) */
+    --aggin-home-bg: #f0f7ff; /* Nền xanh dương rất nhạt cho trang chủ */
+    --aggin-footer-bg: #293036; /* Nền tối cho footer */
+    --aggin-footer-text: #adb5bd; /* Chữ trong footer */
+    --aggin-footer-link-hover: var(--aggin-accent-gold);
+}
+
+/* === THIẾT LẬP CƠ BẢN === */
+html {
+    font-size: 14px;
 }
 
 @media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
-}
-
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+    html {
+        font-size: 16px;
+    }
 }
 
 html {
-  position: relative;
-  min-height: 100%;
+    position: relative;
+    min-height: 100%;
 }
 
 body {
-  margin-bottom: 60px;
+    margin-bottom: 60px; /* Khoảng cách cho footer mặc định của Bootstrap (nếu dùng) */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: var(--aggin-dark-text);
 }
 
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-  color: var(--bs-secondary-color);
-  text-align: end;
+/* === HEADER AGGIN AIRLINES === */
+.main-header-aggin {
+    background: var(--aggin-header-gradient);
+    transition: box-shadow 0.3s ease;
 }
 
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
-  text-align: start;
+    .main-header-aggin .navbar {
+        padding-top: 0.8rem;
+        padding-bottom: 0.8rem;
+    }
+
+    .main-header-aggin .navbar-brand .main-logo-aggin {
+        max-height: 60px;
+        transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .main-header-aggin .navbar-brand:hover .main-logo-aggin {
+        transform: scale(1.1) rotate(-3deg);
+    }
+
+    .main-header-aggin .navbar-brand .logo-text-aggin {
+        color: var(--aggin-secondary-blue);
+        font-family: 'Poppins', sans-serif; /* Cân nhắc thêm Google Font Poppins vào _Layout.cshtml */
+        font-weight: 700;
+        font-size: 1.75rem;
+        margin-left: 8px; /* Tăng khoảng cách một chút */
+    }
+
+    .main-header-aggin .navbar-toggler {
+        border-color: rgba(0, 64, 128, 0.6);
+    }
+
+    .main-header-aggin .navbar-toggler-icon {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(0, 64, 128, 0.95)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+    }
+
+    .main-header-aggin .nav-link {
+        color: var(--aggin-secondary-blue) !important;
+        font-weight: 600;
+        margin: 0 0.5rem;
+        padding: 0.8rem 1rem !important;
+        position: relative;
+        transition: color 0.3s ease, transform 0.2s ease;
+    }
+
+        .main-header-aggin .nav-link:hover,
+        .main-header-aggin .nav-link.active {
+            color: var(--aggin-primary-blue) !important;
+            transform: translateY(-2px); /* Hiệu ứng khi hover/active link thường */
+        }
+
+        /* Gạch chân cho nav-link không phải dropdown và không phải button */
+        .main-header-aggin .nav-link:not(.dropdown-toggle):not(.btn)::after {
+            content: '';
+            position: absolute;
+            bottom: 5px; /* Nâng lên từ mép dưới của padding */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 3px;
+            background-color: var(--aggin-accent-gold);
+            transition: width 0.3s ease-in-out;
+        }
+
+        .main-header-aggin .nav-link:not(.dropdown-toggle):not(.btn):hover::after,
+        .main-header-aggin .nav-link:not(.dropdown-toggle):not(.btn).active::after {
+            width: 70%;
+        }
+
+        /* Tắt gạch chân cho dropdown-toggle và button */
+        .main-header-aggin .nav-link.dropdown-toggle::after,
+        .main-header-aggin .nav-link.btn::after {
+            display: none !important;
+        }
+
+        /* Style riêng cho hover của dropdown-toggle (nếu muốn khác link thường) */
+        .main-header-aggin .nav-link.dropdown-toggle:hover {
+            transform: translateY(-1px); /* Hiệu ứng nhẹ hơn */
+            /* color: var(--aggin-primary-blue) !important; (Đã có ở .nav-link:hover) */
+        }
+
+
+    /* Nút Đăng nhập / Đăng ký trong Header */
+    .main-header-aggin .auth-btn-custom { /* Style chung cho nút auth */
+        font-size: 0.875rem;
+        border-radius: 20px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+        .main-header-aggin .auth-btn-custom.btn-outline-light { /* Nút Đăng nhập (trên nền gradient) */
+            border-color: var(--aggin-secondary-blue); /* Viền theo màu chữ */
+            color: var(--aggin-secondary-blue) !important;
+        }
+
+            .main-header-aggin .auth-btn-custom.btn-outline-light:hover {
+                background-color: var(--aggin-secondary-blue);
+                color: var(--aggin-light-text) !important;
+            }
+
+        .main-header-aggin .auth-btn-custom.btn-warning { /* Nút Đăng ký */
+            background-color: var(--aggin-accent-gold);
+            border-color: var(--aggin-accent-gold);
+            color: var(--aggin-secondary-blue) !important;
+        }
+
+            .main-header-aggin .auth-btn-custom.btn-warning:hover {
+                background-color: #e9b700; /* Vàng đậm hơn */
+                border-color: #e9b700;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            }
+
+    /* Dropdown User Menu */
+    .main-header-aggin .dropdown-menu {
+        border-radius: 0.5rem;
+        box-shadow: 0 0.5rem 1.5rem rgba(0,0,0,.175);
+        border: none;
+        margin-top: 0.5rem; /* Khoảng cách với toggle button */
+    }
+
+    .main-header-aggin .dropdown-item {
+        padding: 0.6rem 1.2rem; /* Tăng padding một chút */
+        font-size: 0.9rem;
+        transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+        .main-header-aggin .dropdown-item i {
+            width: 22px; /* Căn chỉnh icon tốt hơn */
+            margin-right: 0.5rem; /* Khoảng cách icon và text */
+        }
+
+        .main-header-aggin .dropdown-item:active,
+        .main-header-aggin .dropdown-item:focus { /* Thêm focus state */
+            background-color: var(--aggin-primary-blue);
+            color: var(--aggin-light-text) !important;
+        }
+
+/* === MAIN CONTENT AREA === */
+.main-content-area {
+    min-height: calc(100vh - 100px - 180px); /* Điều chỉnh dựa trên chiều cao thực tế của header và footer */
+    padding-top: 1rem; /* Khoảng cách với header */
 }
 
+.home-page-background .main-content-area { /* Chỉ áp dụng nền cho trang home */
+    background-color: var(--aggin-home-bg);
+}
+
+
+/* === STYLES CHUNG CHO COMPONENT (CARD, BUTTON, FORM) === */
 .card {
     border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08); /* Giảm nhẹ shadow mặc định */
+    border: 1px solid #e9ecef; /* Viền nhẹ hơn */
 }
 
 .card-header {
-    border-radius: 10px 10px 0 0 !important;
+    border-radius: 10px 10px 0 0 !important; /* Giữ bo góc trên */
+    font-weight: 600;
 }
 
-.btn-primary {
-    background-color: #2980b9;
-    border-color: #2980b9;
-}
-
-    .btn-primary:hover {
-        background-color: #3498db;
-        border-color: #3498db;
-    }
-
-.btn-warning {
-    background-color: #f39c12;
-    border-color: #f39c12;
-    color: white;
-    font-weight: bold;
-}
-
-    .btn-warning:hover {
-        background-color: #f1c40f;
-        border-color: #f1c40f;
-        color: white;
-    }
-
-/* Styles cho dropdown */
-.form-select {
-    border-radius: 5px;
-    padding: 10px;
-}
-
-/* Styles cho date picker */
-input[type="date"] {
-    border-radius: 5px;
-    padding: 10px;
-}
-
-/* Styles cho kết quả tìm kiếm */
-.table-hover tbody tr:hover {
-    background-color: #f5f5f5;
-    cursor: pointer;
-}
-/* Styles cho form tìm kiếm chuyến bay */
-.card {
-    border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.card-header {
-    border-radius: 10px 10px 0 0 !important;
-}
-
-.btn-primary {
-    background-color: #2980b9;
-    border-color: #2980b9;
+.btn-primary { /* Nút primary chung */
+    background-color: var(--aggin-primary-blue);
+    border-color: var(--aggin-primary-blue);
 }
 
     .btn-primary:hover {
-        background-color: #3498db;
-        border-color: #3498db;
+        background-color: var(--aggin-secondary-blue); /* Đậm hơn khi hover */
+        border-color: var(--aggin-secondary-blue);
     }
 
-.btn-warning {
-    background-color: #f39c12;
-    border-color: #f39c12;
-    color: white;
-    font-weight: bold;
+.btn-warning { /* Nút warning chung (ví dụ nút Tìm chuyến bay) */
+    background-color: var(--aggin-accent-gold);
+    border-color: var(--aggin-accent-gold);
+    color: var(--aggin-dark-text); /* Chữ tối trên nền vàng */
 }
 
     .btn-warning:hover {
-        background-color: #f1c40f;
-        border-color: #f1c40f;
-        color: white;
+        background-color: #e9b700;
+        border-color: #e9b700;
+        color: var(--aggin-dark-text);
     }
 
-/* Styles cho dropdown */
-.form-select {
+.form-select, input.datepicker { /* Input datepicker dùng chung class với form-select */
     border-radius: 5px;
-    padding: 10px;
+    padding: 0.6rem 1rem; /* Điều chỉnh padding */
 }
 
-/* Styles cho date picker */
-.datepicker {
-    border-radius: 5px;
-    padding: 10px;
+input.datepicker {
     cursor: pointer;
     background-color: #fff;
 }
 
-/* Styles cho kết quả tìm kiếm */
 .table-hover tbody tr:hover {
-    background-color: #f5f5f5;
+    background-color: #f0f8ff; /* Màu hover nhẹ cho bảng */
     cursor: pointer;
 }
 
-/* Style cho invalid input */
-.is-invalid {
+.is-invalid { /* Bootstrap đã có, nhưng có thể tùy chỉnh thêm nếu muốn */
     border-color: #dc3545 !important;
-    padding-right: calc(1.5em + 0.75rem) !important;
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e") !important;
-    background-repeat: no-repeat !important;
-    background-position: right calc(0.375em + 0.1875rem) center !important;
-    background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem) !important;
 }
+
+
+/* === TRANG CHỦ AGGIN AIRLINES === */
+/* Slider */
+.hero-slider .carousel-item {
+    height: 60vh; /* Giảm chiều cao một chút */
+    min-height: 380px;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+    .hero-slider .carousel-item img {
+        object-fit: cover;
+        height: 100%;
+    }
+
+.hero-slider .carousel-caption {
+    background-color: rgba(0, 0, 0, 0.55);
+    padding: 25px;
+    border-radius: 8px;
+    bottom: 12%;
+}
+
+    .hero-slider .carousel-caption h5 {
+        font-size: 2.2rem;
+        font-weight: 700;
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.6);
+    }
+
+    .hero-slider .carousel-caption p {
+        font-size: 1.1rem;
+    }
+
+/* Form Tìm kiếm trên Trang chủ */
+.search-form-section .card {
+    border-radius: 15px;
+}
+
+.search-form-section .btn-group .btn {
+    font-weight: 500;
+    padding: 0.6rem 1.5rem; /* Điều chỉnh padding nút Khứ hồi/Một chiều */
+}
+
+.search-form-section .form-select-lg, .search-form-section .form-control-lg {
+    font-size: 1rem;
+    padding: .7rem 1.2rem;
+}
+
+.search-form-section h2 { /* Tiêu đề form tìm kiếm */
+    color: var(--aggin-secondary-blue);
+}
+
+/* Tiêu đề Section chung trên Trang chủ */
+.home-page-background .section-title { /* Chỉ áp dụng cho trang chủ */
+    position: relative;
+    padding-bottom: 15px;
+    margin-bottom: 45px !important;
+    color: var(--aggin-secondary-blue);
+    font-weight: 700;
+}
+
+    .home-page-background .section-title span {
+        display: inline-block;
+        position: relative;
+        padding: 0 15px;
+        background-color: var(--aggin-home-bg); /* Phải khớp màu nền trang chủ */
+        z-index: 1;
+    }
+
+    .home-page-background .section-title::before {
+        content: "";
+        position: absolute;
+        left: 50%;
+        bottom: 0;
+        transform: translateX(-50%);
+        width: 120px; /* Gạch chân dài hơn */
+        height: 4px; /* Gạch chân dày hơn */
+        background-color: var(--aggin-accent-gold);
+        border-radius: 2px;
+    }
+
+/* Card Điểm đến & Ưu đãi */
+.destination-card, .offer-card {
+    transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+}
+
+    .destination-card:hover, .offer-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 12px 25px rgba(0, 0, 0, 0.12) !important;
+    }
+
+    .destination-card .card-img-top, .offer-card .card-img-top {
+        height: 220px;
+        object-fit: cover;
+    }
+
+    .destination-card .card-title, .offer-card .card-title {
+        font-weight: 600;
+        color: var(--aggin-dark-text);
+    }
+
+/* Section "Why Choose Us" */
+.why-choose-us .feature-item {
+    background-color: #fff; /* Nền trắng để nổi bật trên nền trang chủ */
+    border-radius: 10px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    padding: 1.5rem;
+}
+
+    .why-choose-us .feature-item:hover {
+        transform: translateY(-7px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    }
+
+    .why-choose-us .feature-item i {
+        color: var(--aggin-primary-blue); /* Icon màu primary */
+        transition: transform 0.3s ease;
+    }
+
+    .why-choose-us .feature-item:hover i {
+        transform: scale(1.15) rotate(-5deg);
+    }
+
+    .why-choose-us .feature-item h4 {
+        margin-top: 0.75rem;
+        font-weight: 600;
+        color: var(--aggin-secondary-blue);
+    }
+
+
+/* --- FOOTER AGGIN AIRLINES (Cho _Layout.cshtml nếu dùng footer đơn giản) --- */
+.main-footer { /* Class cho footer mặc định ở _Layout */
+    font-size: 0.9rem;
+    background-color: #f8f9fa; /* Nền sáng cho footer mặc định */
+}
+
+    .main-footer a {
+        text-decoration: none;
+        color: var(--aggin-muted-text);
+    }
+
+        .main-footer a:hover {
+            text-decoration: underline;
+            color: var(--aggin-primary-blue);
+        }
+
+/* --- FOOTER CHI TIẾT (Dùng cho class .site-footer nếu bạn đặt ở Home/Index.cshtml) --- */
+.site-footer {
+    background-color: var(--aggin-footer-bg);
+    color: var(--aggin-footer-text);
+    padding-top: 3.5rem; /* Tăng padding */
+    padding-bottom: 2.5rem;
+    font-size: 0.9rem;
+}
+
+    .site-footer h5, .site-footer h6 {
+        color: var(--aggin-light-text); /* Chữ tiêu đề sáng hơn */
+        font-weight: 600; /* Đậm hơn */
+        margin-bottom: 1rem;
+        text-transform: uppercase; /* In hoa tiêu đề nhỏ */
+        font-size: 0.95rem;
+    }
+
+    .site-footer .footer-logo-aggin { /* Áp dụng cho logo trong .site-footer */
+        max-height: 75px; /* TĂNG LOGO FOOTER */
+        margin-bottom: 1rem;
+        opacity: 0.9;
+        transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+        .site-footer .footer-logo-aggin:hover {
+            opacity: 1;
+            transform: scale(1.05);
+        }
+
+    .site-footer ul li a {
+        color: var(--aggin-footer-text);
+        text-decoration: none;
+        transition: color 0.2s ease, padding-left 0.2s ease;
+        display: inline-block; /* Cho phép padding-left có tác dụng */
+        padding-bottom: 5px; /* Khoảng cách giữa các link */
+    }
+
+        .site-footer ul li a:hover {
+            color: var(--aggin-footer-link-hover) !important;
+            padding-left: 5px;
+        }
+
+    .site-footer .social-icons a {
+        color: var(--aggin-footer-text);
+        font-size: 1.4rem; /* Giảm nhẹ icon social */
+        transition: color 0.2s ease, transform 0.2s ease;
+        margin: 0 0.5rem; /* Khoảng cách icon social */
+    }
+
+        .site-footer .social-icons a:hover {
+            color: var(--aggin-footer-link-hover);
+            transform: translateY(-3px);
+        }
+
+    .site-footer hr {
+        border-top: 1px solid rgba(255,255,255,0.1); /* Đường kẻ mờ hơn */
+    }

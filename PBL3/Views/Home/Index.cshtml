@@ -1,76 +1,302 @@
 @model PBL3.Models.ViewModels.FlightSearchViewModel
 @{
-    ViewData["Title"] = "Tìm kiếm chuyến bay";
+    ViewData["Title"] = "Đặt vé máy bay giá rẻ - Aggin Airlines"; // Đổi tên
 }
 
-<div class="container mt-4">
-    <div class="card">
-        <div class="card-body">
-            <div class="mb-4">
-                <div class="btn-group w-100" role="group">
-                    <button type="button" class="btn @(Model.TripType == "roundtrip" ? "btn-primary" : "btn-outline-primary") trip-type-btn" data-trip-type="roundtrip">Khứ hồi</button>
-                    <button type="button" class="btn @(Model.TripType == "oneway" ? "btn-primary" : "btn-outline-primary") trip-type-btn" data-trip-type="oneway">Một chiều</button>
+@* --- SECTION 1: SLIDER ẢNH NỔI BẬT --- *@
+<section class="hero-slider mb-5">
+    @* ... (Nội dung Slider giữ nguyên như bạn đã cung cấp) ... *@
+    <div id="mainSlider" class="carousel slide" data-bs-ride="carousel">
+        <div class="carousel-indicators">
+            <button type="button" data-bs-target="#mainSlider" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+            <button type="button" data-bs-target="#mainSlider" data-bs-slide-to="1" aria-label="Slide 2"></button>
+            <button type="button" data-bs-target="#mainSlider" data-bs-slide-to="2" aria-label="Slide 3"></button>
+        </div>
+        <div class="carousel-inner">
+            <div class="carousel-item active">
+                <img src="~/images/home/slider1.jpg" class="d-block w-100" alt="Khám phá thế giới">
+                <div class="carousel-caption d-none d-md-block">
+                    <h5>Khám Phá Thế Giới Cùng Aggin Airlines</h5>
+                    <p>Đặt vé dễ dàng, trải nghiệm tuyệt vời.</p>
                 </div>
             </div>
+            <div class="carousel-item">
+                <img src="~/images/home/slider2.jpg" class="d-block w-100" alt="Ưu đãi hấp dẫn">
+                <div class="carousel-caption d-none d-md-block">
+                    <h5>Ưu Đãi Đặc Biệt Mỗi Tuần</h5>
+                    <p>Đừng bỏ lỡ cơ hội bay với giá tốt nhất.</p>
+                </div>
+            </div>
+            <div class="carousel-item">
+                <img src="~/images/home/slider3.jpg" class="d-block w-100" alt="Điểm đến mơ ước">
+                <div class="carousel-caption d-none d-md-block">
+                    <h5>Chạm Đến Những Chân Trời Mới</h5>
+                    <p>Mạng lưới bay rộng khắp, dịch vụ tận tâm.</p>
+                </div>
+            </div>
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#mainSlider" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Previous</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#mainSlider" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Next</span>
+        </button>
+    </div>
+</section>
 
-            <form asp-action="Search" method="post" id="flightSearchForm">
-                <input type="hidden" asp-for="TripType" id="tripTypeInput" />
-
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label asp-for="DepartureAirportId" class="form-label">Từ</label>
-                        <select asp-for="DepartureAirportId" asp-items="Model.Airports" class="form-select" id="departureAirport">
-                            <option value="">-- Chọn điểm khởi hành --</option>
-                        </select>
-                        <span asp-validation-for="DepartureAirportId" class="text-danger"></span>
-                        <div id="departureError" class="text-danger" style="display: none;">Điểm đi và điểm đến không được trùng nhau</div>
-                    </div>
-                    <div class="col-md-6">
-                        <label asp-for="ArrivalAirportId" class="form-label">Đến</label>
-                        <select asp-for="ArrivalAirportId" asp-items="Model.Airports" class="form-select" id="arrivalAirport">
-                            <option value="">-- Chọn điểm đến --</option>
-                        </select>
-                        <span asp-validation-for="ArrivalAirportId" class="text-danger"></span>
-                        <div id="arrivalError" class="text-danger" style="display: none;">Điểm đi và điểm đến không được trùng nhau</div>
+@* --- SECTION 2: FORM TÌM KIẾM CHUYẾN BAY --- *@
+<section class="search-form-section py-5 bg-light" id="search-form-section-anchor">
+    @* << ĐÃ THÊM ID Ở ĐÂY *@
+    <div class="container">
+        @* ... (Nội dung Form tìm kiếm giữ nguyên như bạn đã cung cấp) ... *@
+        <div class="card shadow-lg border-0">
+            <div class="card-body p-4 p-md-5">
+                <h2 class="text-center text-primary mb-4 fw-bold">Tìm Chuyến Bay Hoàn Hảo Của Bạn</h2>
+                <div class="mb-4 text-center">
+                    <div class="btn-group shadow-sm" role="group" aria-label="Flight trip type">
+                        <button type="button" class="btn @(Model.TripType == "roundtrip" ? "btn-primary" : "btn-outline-primary") trip-type-btn px-4 py-2" data-trip-type="roundtrip"><i class="fas fa-exchange-alt me-2"></i>Khứ hồi</button>
+                        <button type="button" class="btn @(Model.TripType == "oneway" ? "btn-primary" : "btn-outline-primary") trip-type-btn px-4 py-2" data-trip-type="oneway"><i class="fas fa-arrow-right me-2"></i>Một chiều</button>
                     </div>
                 </div>
 
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label asp-for="DepartureDate" class="form-label">Ngày đi</label>
-                        <input asp-for="DepartureDate" class="form-control datepicker" type="text" readonly id="departureDate" value="@DateTime.Now.ToString("yyyy-dd-MM")" />
-                        <span asp-validation-for="DepartureDate" class="text-danger"></span>
-                    </div>
-                    <div class="col-md-6 return-date-container">
-                        <label asp-for="ReturnDate" class="form-label">Ngày về</label>
-                        <input asp-for="ReturnDate" class="form-control datepicker" type="text" readonly id="returnDate" />
-                        <span asp-validation-for="ReturnDate" class="text-danger"></span>
-                    </div>
-                </div>
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label asp-for="PassengerCount" class="form-label">Hành khách</label>
-                        <select asp-for="PassengerCount" class="form-select">
-                            @for (int i = 1; i <= 10; i++)
-                            {
-                                <option value="@i">@i Hành khách</option>
-                            }
-                        </select>
-                    </div>
-                </div>
+                <form asp-controller="Home" asp-action="Search" method="post" id="flightSearchForm">
+                    <input type="hidden" asp-for="TripType" id="tripTypeInput" />
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert" style="@(ViewData.ModelState.IsValid ? "display:none;" : "")"></div> @* Ẩn nếu không có lỗi *@
 
-                <div class="d-grid">
-                    <button type="submit" class="btn btn-warning btn-lg">TÌM CHUYẾN BAY</button>
-                </div>
-            </form>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="DepartureAirportId" class="form-label fw-bold"><i class="fas fa-plane-departure me-1"></i> Từ</label>
+                            <select asp-for="DepartureAirportId" asp-items="Model.Airports" class="form-select form-select-lg" id="departureAirport">
+                                <option value="">-- Chọn điểm khởi hành --</option>
+                            </select>
+                            <span asp-validation-for="DepartureAirportId" class="text-danger small"></span>
+                            <div id="departureError" class="text-danger small" style="display: none;">Điểm đi và điểm đến không được trùng nhau.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="ArrivalAirportId" class="form-label fw-bold"><i class="fas fa-plane-arrival me-1"></i> Đến</label>
+                            <select asp-for="ArrivalAirportId" asp-items="Model.Airports" class="form-select form-select-lg" id="arrivalAirport">
+                                <option value="">-- Chọn điểm đến --</option>
+                            </select>
+                            <span asp-validation-for="ArrivalAirportId" class="text-danger small"></span>
+                            <div id="arrivalError" class="text-danger small" style="display: none;">Điểm đi và điểm đến không được trùng nhau.</div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="DepartureDate" class="form-label fw-bold"><i class="fas fa-calendar-alt me-1"></i> Ngày đi</label>
+                            <input asp-for="DepartureDate" class="form-control form-control-lg datepicker" type="text" readonly id="departureDate" placeholder="Chọn ngày đi" />
+                            <span asp-validation-for="DepartureDate" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6 return-date-container">
+                            <label asp-for="ReturnDate" class="form-label fw-bold"><i class="fas fa-calendar-alt me-1"></i> Ngày về</label>
+                            <input asp-for="ReturnDate" class="form-control form-control-lg datepicker" type="text" readonly id="returnDate" placeholder="Chọn ngày về (nếu khứ hồi)" />
+                            <span asp-validation-for="ReturnDate" class="text-danger small"></span>
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label asp-for="PassengerCount" class="form-label fw-bold"><i class="fas fa-users me-1"></i> Hành khách</label>
+                            <select asp-for="PassengerCount" class="form-select form-select-lg">
+                                @for (int i = 1; i <= 10; i++)
+                                {
+                                    <option value="@i">@i Hành khách</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-warning btn-lg fw-bolder py-3"><i class="fas fa-search me-2"></i>TÌM CHUYẾN BAY NGAY</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
-</div>
+</section>
+
+<section class="popular-destinations py-5">
+    <div class="container">
+        <h2 class="text-center mb-5 fw-bold section-title"><span>Điểm Đến Phổ Biến</span></h2>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+            <div class="col">
+                <div class="card destination-card h-100 shadow-sm">
+                    <img src="~/images/home/dest-hanoi.jpg" class="card-img-top" alt="Hà Nội"> @* THAY HÌNH ẢNH *@
+                    <div class="card-body">
+                        <h5 class="card-title">Hà Nội</h5>
+                        <p class="card-text small text-muted">Thủ đô ngàn năm văn hiến.</p>
+                        <a href="#" class="btn btn-sm btn-outline-primary stretched-link">Khám phá</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card destination-card h-100 shadow-sm">
+                    <img src="~/images/home/dest-hcm.jpg" class="card-img-top" alt="TP. Hồ Chí Minh"> @* THAY HÌNH ẢNH *@
+                    <div class="card-body">
+                        <h5 class="card-title">TP. Hồ Chí Minh</h5>
+                        <p class="card-text small text-muted">Thành phố năng động, hiện đại.</p>
+                        <a href="#" class="btn btn-sm btn-outline-primary stretched-link">Khám phá</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card destination-card h-100 shadow-sm">
+                    <img src="~/images/home/dest-danang.jpg" class="card-img-top" alt="Đà Nẵng"> @* THAY HÌNH ẢNH *@
+                    <div class="card-body">
+                        <h5 class="card-title">Đà Nẵng</h5>
+                        <p class="card-text small text-muted">Thành phố biển xinh đẹp.</p>
+                        <a href="#" class="btn btn-sm btn-outline-primary stretched-link">Khám phá</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card destination-card h-100 shadow-sm">
+                    <img src="~/images/home/dest-phuquoc.jpg" class="card-img-top" alt="Phú Quốc"> @* THAY HÌNH ẢNH *@
+                    <div class="card-body">
+                        <h5 class="card-title">Phú Quốc</h5>
+                        <p class="card-text small text-muted">Đảo ngọc thiên đường.</p>
+                        <a href="#" class="btn btn-sm btn-outline-primary stretched-link">Khám phá</a>
+                    </div>
+                </div>
+            </div>
+            @* Thêm các điểm đến khác *@
+        </div>
+    </div>
+</section>
+@* --- SECTION 4: ƯU ĐÃI & KHUYẾN MÃI --- *@
+<section class="offers-section py-5 bg-light">
+    <div class="container">
+        <h2 class="text-center mb-5 fw-bold section-title"><span>Ưu Đãi Hấp Dẫn</span></h2>
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            <div class="col">
+                <div class="card offer-card h-100 shadow-sm">
+                    <img src="~/images/home/offer1.jpg" class="card-img-top" alt="Ưu đãi 1"> @* THAY HÌNH ẢNH *@
+                    <div class="card-body">
+                        <h5 class="card-title">Bay Nội Địa, Giá Cực Sốc!</h5>
+                        <p class="card-text small">Giảm đến 20% cho các chặng bay trong nước. Đặt ngay hôm nay!</p>
+                        <a href="#" class="btn btn-sm btn-danger">Xem Chi Tiết</a>
+                    </div>
+                    <div class="card-footer text-muted small">
+                        Áp dụng đến 30/09/2024
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card offer-card h-100 shadow-sm">
+                    <img src="~/images/home/offer2.jpg" class="card-img-top" alt="Ưu đãi 2"> @* THAY HÌNH ẢNH *@
+                    <div class="card-body">
+                        <h5 class="card-title">Khám Phá Đông Nam Á</h5>
+                        <p class="card-text small">Vé khứ hồi chỉ từ 2.500.000 VNĐ. Cơ hội du lịch tuyệt vời!</p>
+                        <a href="#" class="btn btn-sm btn-danger">Xem Chi Tiết</a>
+                    </div>
+                    <div class="card-footer text-muted small">
+                        Số lượng có hạn
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card offer-card h-100 shadow-sm">
+                    <img src="~/images/home/offer3.jpg" class="card-img-top" alt="Ưu đãi 3"> @* THAY HÌNH ẢNH *@
+                    <div class="card-body">
+                        <h5 class="card-title">Combo Khách Sạn + Vé Bay</h5>
+                        <p class="card-text small">Tiết kiệm hơn khi đặt trọn gói. Nhiều lựa chọn hấp dẫn.</p>
+                        <a href="#" class="btn btn-sm btn-danger">Xem Chi Tiết</a>
+                    </div>
+                    <div class="card-footer text-muted small">
+                        Ưu đãi độc quyền
+                    </div>
+                </div>
+            </div>
+            @* Thêm các ưu đãi khác *@
+        </div>
+    </div>
+</section>
+@* --- SECTION 5: TẠI SAO CHỌN CHÚNG TÔI --- *@
+<section class="why-choose-us py-5">
+    <div class="container">
+        <h2 class="text-center mb-5 fw-bold section-title"><span>Tại Sao Chọn Chúng Tôi?</span></h2>
+        <div class="row text-center g-4">
+            <div class="col-md-4">
+                <div class="feature-item p-3">
+                    <i class="fas fa-dollar-sign fa-3x text-primary mb-3"></i>
+                    <h4>Giá Tốt Nhất</h4>
+                    <p class="text-muted small">Luôn cam kết mang đến giá vé cạnh tranh và nhiều ưu đãi.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-item p-3">
+                    <i class="fas fa-headset fa-3x text-primary mb-3"></i>
+                    <h4>Hỗ Trợ 24/7</h4>
+                    <p class="text-muted small">Đội ngũ hỗ trợ chuyên nghiệp, sẵn sàng giúp đỡ bạn mọi lúc.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-item p-3">
+                    <i class="fas fa-shield-alt fa-3x text-primary mb-3"></i>
+                    <h4>Thanh Toán An Toàn</h4>
+                    <p class="text-muted small">Bảo mật thông tin và giao dịch với các phương thức hiện đại.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+@* --- SECTION 6: FOOTER MỞ RỘNG (Ngoài footer mặc định của _Layout) --- *@
+<footer class="site-footer bg-dark text-white pt-5 pb-4">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <h5><img src="~/images/aggin-airlines-logo.png" alt="YourAppName Logo" style="max-height: 40px; margin-right: 10px;">Aggin Airlines</h5> @* THAY LOGO *@
+                <p class="small text-muted">
+                    Trải nghiệm đặt vé máy bay trực tuyến nhanh chóng, tiện lợi và an toàn.
+                    Khám phá thế giới cùng hàng ngàn ưu đãi hấp dẫn.
+                </p>
+            </div>
+            <div class="col-md-2 col-6 mb-3">
+                <h6>Về Chúng Tôi</h6>
+                <ul class="list-unstyled small">
+                    <li><a href="#" class="text-white-50">Giới thiệu</a></li>
+                    <li><a href="#" class="text-white-50">Tuyển dụng</a></li>
+                    <li><a href="#" class="text-white-50">Liên hệ</a></li>
+                    <li><a href="#" class="text-white-50">Điều khoản</a></li>
+                </ul>
+            </div>
+            <div class="col-md-3 col-6 mb-3">
+                <h6>Hỗ Trợ Khách Hàng</h6>
+                <ul class="list-unstyled small">
+                    <li><a href="#" class="text-white-50">Câu hỏi thường gặp</a></li>
+                    <li><a href="#" class="text-white-50">Hướng dẫn đặt vé</a></li>
+                    <li><a href="#" class="text-white-50">Chính sách hoàn hủy</a></li>
+                    <li><a href="#" class="text-white-50">Khiếu nại & Góp ý</a></li>
+                </ul>
+            </div>
+            <div class="col-md-3 mb-3">
+                <h6>Kết Nối Với Chúng Tôi</h6>
+                <a href="#" class="text-white-50 me-2"><i class="fab fa-facebook-f fa-lg"></i></a>
+                <a href="#" class="text-white-50 me-2"><i class="fab fa-instagram fa-lg"></i></a>
+                <a href="#" class="text-white-50 me-2"><i class="fab fa-youtube fa-lg"></i></a>
+                <a href="#" class="text-white-50"><i class="fab fa-tiktok fa-lg"></i></a>
+                <h6 class="mt-3">Tải Ứng Dụng</h6>
+                <a href="#"><img src="~/images/appstore.png" alt="App Store" style="height: 40px;" class="me-2"></a> @* THAY HÌNH ẢNH *@
+                <a href="#"><img src="~/images/googleplay.png" alt="Google Play" style="height: 40px;"></a> @* THAY HÌNH ẢNH *@
+            </div>
+        </div>
+        <hr class="bg-secondary">
+        <div class="row">
+            <div class="col-12 text-center small text-muted">
+                Bản quyền © @DateTime.Now.Year Aggin Flight. Bảo lưu mọi quyền.
+            </div>
+        </div>
+    </div>
+</footer>
+
 
 @section Scripts {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/vn.js"></script>
+    @* Font Awesome đã có trong _Layout.cshtml rồi *@
 
     <script>
         $(document).ready(function () {
@@ -78,54 +304,67 @@
             $('.trip-type-btn').click(function () {
                 $('.trip-type-btn').removeClass('btn-primary').addClass('btn-outline-primary');
                 $(this).removeClass('btn-outline-primary').addClass('btn-primary');
-
                 var tripType = $(this).data('trip-type');
                 $('#tripTypeInput').val(tripType);
-
-                // Hiển thị/ẩn ngày về tùy theo loại chuyến bay
                 if (tripType === 'oneway') {
-                    $('.return-date-container').hide();
+                    $('.return-date-container').slideUp();
                     $('#returnDate').val('');
+                    $('#returnDate').prop('required', false); // Quan trọng: bỏ required
+                    if (typeof departureDatePicker !== 'undefined') {
+                        departureDatePicker.set('maxDate', null);
+                    }
                 } else {
-                    $('.return-date-container').show();
+                    $('.return-date-container').slideDown();
+                    $('#returnDate').prop('required', true); // Quan trọng: đặt lại required
+                    if (typeof departureDatePicker !== 'undefined' && typeof returnDatePicker !== 'undefined' && departureDatePicker.selectedDates[0]) {
+                        returnDatePicker.set('minDate', departureDatePicker.selectedDates[0]);
+                    }
                 }
             });
 
-            // Khởi tạo ban đầu
-            if ($('#tripTypeInput').val() === 'oneway') {
+            // Khởi tạo ban đầu cho nút chọn loại chuyến bay và ẩn/hiện ngày về
+            var initialTripType = $('#tripTypeInput').val() || '@(Model.TripType ?? "roundtrip")';
+            $('#tripTypeInput').val(initialTripType);
+            $('.trip-type-btn').removeClass('btn-primary').addClass('btn-outline-primary');
+            $('.trip-type-btn[data-trip-type="' + initialTripType + '"]').removeClass('btn-outline-primary').addClass('btn-primary');
+
+            if (initialTripType === 'oneway') {
                 $('.return-date-container').hide();
+                $('#returnDate').prop('required', false);
+            } else {
+                $('.return-date-container').show();
+                $('#returnDate').prop('required', true);
             }
 
             // Kiểm tra điểm đi và điểm đến không được trùng nhau
             function checkAirports() {
                 var departureId = $('#departureAirport').val();
                 var arrivalId = $('#arrivalAirport').val();
-
+                var isValid = true;
                 if (departureId && arrivalId && departureId === arrivalId) {
                     $('#departureAirport, #arrivalAirport').addClass('is-invalid');
-                    $('#departureError, #arrivalError').show();
-                    return false;
+                    $('#departureError, #arrivalError').slideDown();
+                    isValid = false;
                 } else {
                     $('#departureAirport, #arrivalAirport').removeClass('is-invalid');
-                    $('#departureError, #arrivalError').hide();
-                    return true;
+                    $('#departureError, #arrivalError').slideUp();
                 }
+                return isValid;
             }
-
             $('#departureAirport, #arrivalAirport').change(checkAirports);
 
             // Cấu hình datepicker cho ngày đi
-            var today = new Date();
-
             var departureDatePicker = flatpickr("#departureDate", {
                 dateFormat: "d/m/Y",
                 minDate: "today",
                 locale: "vn",
-                disableMobile: "true",
+                defaultDate: "@Model.DepartureDate.ToString("yyyy-MM-dd")", // Format này Flatpickr hiểu
                 onChange: function(selectedDates, dateStr, instance) {
-                    // Cập nhật ngày tối thiểu cho ngày về
-                    if (selectedDates[0]) {
+                    if (selectedDates[0] && typeof returnDatePicker !== 'undefined') {
                         returnDatePicker.set('minDate', selectedDates[0]);
+                        if (returnDatePicker.selectedDates[0] && returnDatePicker.selectedDates[0] < selectedDates[0]) {
+                            returnDatePicker.clear();
+                        }
                     }
                 }
             });
@@ -133,41 +372,93 @@
             // Cấu hình datepicker cho ngày về
             var returnDatePicker = flatpickr("#returnDate", {
                 dateFormat: "d/m/Y",
-                minDate: "today",
+                minDate: "@Model.DepartureDate.ToString("yyyy-MM-dd")", // Ban đầu bằng ngày đi
                 locale: "vn",
-                disableMobile: "true",
-                onChange: function(selectedDates, dateStr, instance) {
-                    // Cập nhật ngày tối đa cho ngày đi
-                    if (selectedDates[0]) {
-                        departureDatePicker.set('maxDate', selectedDates[0]);
-                    }
-                }
+                defaultDate: "@(Model.ReturnDate.HasValue ? Model.ReturnDate.Value.ToString("yyyy-MM-dd") : "")"
             });
 
             // Kiểm tra form trước khi submit
             $('#flightSearchForm').submit(function(e) {
-                // Trước khi submit, chuyển định dạng ngày từ d/m/Y về yyyy-MM-dd
+                var tripTypeSubmit = $('#tripTypeInput').val();
+                var returnDateValSubmit = $('#returnDate').val();
 
-                // Hàm convert ngày
-                function convertDateFormat(dateStr) {
-                    if (!dateStr) return "";
-                    var parts = dateStr.split('/');
-                    if (parts.length !== 3) return dateStr;
-                    return parts[2] + '-' + parts[1].padStart(2, '0') + '-' + parts[0].padStart(2, '0');
+                if (tripTypeSubmit === 'roundtrip' && !returnDateValSubmit) {
+                    var returnDateValidationSpan = $('span[data-valmsg-for="ReturnDate"]');
+                    returnDateValidationSpan.text("Vui lòng chọn ngày về cho chuyến khứ hồi.").show();
+                    $('#returnDate').addClass('is-invalid').focus();
+                    e.preventDefault();
+                    return false;
+                } else {
+                     $('span[data-valmsg-for="ReturnDate"]').text("").hide();
+                     $('#returnDate').removeClass('is-invalid');
                 }
 
-                var departureDate = $('#departureDate').val();
-                var returnDate = $('#returnDate').val();
-
-                $('#departureDate').val(convertDateFormat(departureDate));
-                $('#returnDate').val(convertDateFormat(returnDate));
                 if (!checkAirports()) {
                     e.preventDefault();
                     return false;
                 }
 
-                return true;
+                // Chuyển đổi định dạng ngày trước khi submit (RẤT QUAN TRỌNG)
+                function convertToIsoDate(dateStr_dmy) {
+                    if (!dateStr_dmy) return "";
+                    var parts = dateStr_dmy.split('/');
+                    if (parts.length !== 3) return dateStr_dmy;
+                    return parts[2] + '-' + parts[1].padStart(2, '0') + '-' + parts[0].padStart(2, '0');
+                }
+
+                var departureDateForSubmit = $('#departureDate').val();
+                $('#departureDate').val(convertToIsoDate(departureDateForSubmit));
+
+                if (tripTypeSubmit === 'roundtrip') {
+                    var returnDateForSubmit = $('#returnDate').val();
+                     $('#returnDate').val(convertToIsoDate(returnDateForSubmit));
+                } else {
+                    $('#returnDate').val(''); // Đảm bảo rỗng nếu một chiều
+                }
+                return true; // Cho phép submit nếu mọi thứ OK
             });
-        });
-    </script>
+
+
+            // --- SCRIPT GIỮ VỊ TRÍ CUỘN TRANG ---
+            // Đoạn code này nên được đặt cuối cùng trong $(document).ready()
+        @if ((ViewData["ScrollToSearchForm"] as bool?) == true || (ViewData.ModelState != null && !ViewData.ModelState.IsValid))
+    {
+        // Chỉ cuộn nếu ModelState thực sự có lỗi từ server HOẶC có cờ yêu cầu
+        if ((ViewData.ModelState != null && ViewData.ModelState.Count > 0 && !ViewData.ModelState.IsValid) ||
+            (ViewData["ScrollToSearchForm"] as bool?) == true)
+        {
+            <text> 
+            // console.log("Attempting to scroll to search form...");
+            const searchFormAnchor = document.getElementById('search-form-section-anchor');
+            if (searchFormAnchor)
+            {
+                const headerElement = document.querySelector('.main-header-aggin'); // Lấy header bằng class
+                const headerHeight = headerElement ? headerElement.offsetHeight : 80; // Chiều cao header hoặc mặc định
+                const offset = headerHeight + 20; // Thêm padding
+
+                // console.log(`Header height: ${headerHeight}, Target offset: ${$(searchFormAnchor).offset().top}, Scroll to: ${$(searchFormAnchor).offset().top - offset}`);
+
+                // Dùng window.scrollTo cho trình duyệt hiện đại hoặc animate của jQuery
+                if (typeof window.scrollTo === 'function' && typeof searchFormAnchor.getBoundingClientRect === 'function')
+                {
+                    window.scrollTo({
+                    top: searchFormAnchor.getBoundingClientRect().top + window.pageYOffset - offset,
+                    behavior: 'smooth'
+                   });
+        } else { // Fallback cho trình duyệt cũ hoặc nếu jQuery là ưu tiên
+                 $('html, body').animate({
+        scrollTop: $(searchFormAnchor).offset().top - offset
+                }, 500); // Thời gian cuộn 500ms
+            }
+} else
+{
+    // console.log("Element with ID 'search-form-section-anchor' not found.");
+}
+            </text>
+                }
+        }
+        // --- KẾT THÚC SCRIPT GIỮ VỊ TRÍ CUỘN TRANG ---
+
+    });
+</script>
 }

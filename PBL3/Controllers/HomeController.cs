@@ -24,84 +24,129 @@ namespace PBL3.Controllers
             _context = context;
         }
 
-        public async Task<IActionResult> Index()
+        // GET: Home/Index
+        public async Task<IActionResult> Index(bool scrollToSearchForm = false)
         {
+            // Cờ scrollToSearchForm sẽ được JavaScript trên View Index sử dụng
+            // để cuộn đến form tìm kiếm nếu người dùng được redirect về đây do lỗi validation.
+            if (scrollToSearchForm)
+            {
+                ViewData["ScrollToSearchForm"] = true;
+            }
+
             var viewModel = new FlightSearchViewModel
             {
                 TripType = "roundtrip", // Mặc định là khứ hồi
-                DepartureDate = DateTime.Now,
+                DepartureDate = DateTime.Today.AddDays(1), // Mặc định ngày mai để tránh lỗi ngày quá khứ
+                // ReturnDate = DateTime.Today.AddDays(8), // Tùy chọn: Mặc định ngày về
                 PassengerCount = 1,
                 Airports = await GetAirportsAsync()
             };
             return View(viewModel);
         }
 
+        // POST: Home/Search
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Search(FlightSearchViewModel model)
         {
-            
-
-            if (model.DepartureAirportId == model.ArrivalAirportId)
+            // --- VALIDATION LOGIC ---
+            if (model.DepartureAirportId == model.ArrivalAirportId && model.DepartureAirportId != 0)
             {
-                ModelState.AddModelError("ArrivalAirportId", "Điểm đến không được trùng với điểm đi");
-                model.Airports = await GetAirportsAsync();
-                return View("Index", model);
+                ModelState.AddModelError("ArrivalAirportId", "Điểm đến không được trùng với điểm đi.");
             }
 
-            // Kiểm tra ngày đi phải trước ngày về (nếu là khứ hồi)
-            if (model.TripType == "roundtrip" && model.ReturnDate.HasValue && model.DepartureDate > model.ReturnDate.Value)
+            if (model.DepartureDate.Date < DateTime.Today)
             {
-                ModelState.AddModelError("ReturnDate", "Ngày về phải sau ngày đi");
-                model.Airports = await GetAirportsAsync();
-                return View("Index", model);
+                ModelState.AddModelError("DepartureDate", "Ngày đi không được chọn ngày trong quá khứ.");
             }
 
-            // Mở rộng khoảng ngày tìm kiếm
-            var departureStart = model.DepartureDate.Date;
-            var departureEnd = model.DepartureDate.Date.AddDays(2);
+            if (model.TripType == "roundtrip")
+            {
+                if (!model.ReturnDate.HasValue)
+                {
+                    ModelState.AddModelError("ReturnDate", "Vui lòng chọn ngày về cho chuyến bay khứ hồi.");
+                }
+                else
+                {
+                    if (model.ReturnDate.Value.Date < DateTime.Today)
+                    {
+                        ModelState.AddModelError("ReturnDate", "Ngày về không được chọn ngày trong quá khứ.");
+                    }
+                    if (model.ReturnDate.Value.Date < model.DepartureDate.Date) // So sánh Date chính xác hơn
+                    {
+                        ModelState.AddModelError("ReturnDate", "Ngày về phải sau hoặc bằng ngày đi.");
+                    }
+                }
+            }
 
+            if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("Search form validation failed.");
+                model.Airports = await GetAirportsAsync(); // Nạp lại danh sách sân bay
+                ViewData["ScrollToSearchForm"] = true; // Yêu cầu cuộn lại form trên view Index
+                return View("Index", model); // Trả về view Index với các lỗi validation
+            }
 
-            // Tìm kiếm chuyến bay đi 
+            _logger.LogInformation($"Searching flights: {model.DepartureAirportId} to {model.ArrivalAirportId} on {model.DepartureDate.ToShortDateString()}");
+
+            // --- QUERY LOGIC ---
+            var departureDateOnly = model.DepartureDate.Date;
+
             model.OutboundFlights = await _context.Flights
-                .Include(f => f.DepartureAirport)
+                .Include(f => f.DepartureAirport) // Include để hiển thị tên sân bay
                 .Include(f => f.ArrivalAirport)
                 .Where(f => f.StartingDestination == model.DepartureAirportId &&
                            f.ReachingDestination == model.ArrivalAirportId &&
-                           f.StartingTime.Date >= departureStart &&
-                           f.StartingTime.Date <= departureEnd)
+                           f.StartingTime.Date == departureDateOnly && // Chỉ tìm trong ngày đi đã chọn
+                           f.AvailableSeats >= model.PassengerCount)    // Kiểm tra đủ ghế
+                .OrderBy(f => f.StartingTime) // Sắp xếp theo giờ khởi hành
+                .AsNoTracking() // Tối ưu cho query chỉ đọc
                 .ToListAsync();
 
-            // Tìm kiếm chuyến bay về (nếu là khứ hồi)
+            _logger.LogInformation($"Found {model.OutboundFlights.Count} outbound flights.");
+
             if (model.TripType == "roundtrip" && model.ReturnDate.HasValue)
             {
-                var returnStart = model.ReturnDate.Value.Date.AddDays(-1);
-                var returnEnd = model.ReturnDate.Value.Date.AddDays(1);
-
+                var returnDateOnly = model.ReturnDate.Value.Date;
                 model.ReturnFlights = await _context.Flights
                     .Include(f => f.DepartureAirport)
                     .Include(f => f.ArrivalAirport)
-                    .Where(f => f.StartingDestination == model.ArrivalAirportId &&
+                    .Where(f => f.StartingDestination == model.ArrivalAirportId && // Đảo ngược điểm đi/đến
                                f.ReachingDestination == model.DepartureAirportId &&
-                               f.StartingTime.Date >= returnStart &&
-                               f.StartingTime.Date <= returnEnd)
+                               f.StartingTime.Date == returnDateOnly &&
+                               f.AvailableSeats >= model.PassengerCount)
+                    .OrderBy(f => f.StartingTime)
+                    .AsNoTracking()
                     .ToListAsync();
+                _logger.LogInformation($"Found {model.ReturnFlights.Count} return flights.");
+            }
+            else
+            {
+                model.ReturnFlights = new List<Flight>(); // Khởi tạo rỗng nếu là một chiều
             }
 
-            model.Airports = await GetAirportsAsync();
+            // Không cần load lại model.Airports ở đây vì SearchResults ViewModel đã có nó
+            // model.Airports = await GetAirportsAsync();
             return View("SearchResults", model);
         }
+
+        // Helper function để lấy danh sách sân bay
         private async Task<List<SelectListItem>> GetAirportsAsync()
         {
+            // Cache danh sách sân bay nếu có thể để tăng hiệu suất
+            // Ở đây làm đơn giản là query mỗi lần
             var airports = await _context.Airports
-                .Where(a => a.Country == "Việt Nam")
+                // .Where(a => a.Country == "Việt Nam") // Bỏ lọc theo quốc gia nếu muốn hiển thị tất cả
                 .OrderBy(a => a.City)
+                .ThenBy(a => a.Name)
+                .AsNoTracking()
                 .ToListAsync();
-
 
             return airports.Select(a => new SelectListItem
             {
                 Value = a.Id.ToString(),
-                Text = $"{a.City} ({a.Code}), {a.Country}"
+                Text = $"{a.City} ({a.Code}) - {a.Name}" // Hiển thị rõ ràng hơn
             }).ToList();
         }
 

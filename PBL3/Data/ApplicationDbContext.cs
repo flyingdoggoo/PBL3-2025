@@ -18,6 +18,7 @@ namespace PBL3.Data
         public DbSet<Section> Sections { get; set; } // Thêm nếu có Section
         public DbSet<Seat> Seats { get; set; }
         // Không cần DbSet cho Employee, Passenger, SystemManager vì chúng dùng TPH
+        public DbSet<UserOtp> UserOtps { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

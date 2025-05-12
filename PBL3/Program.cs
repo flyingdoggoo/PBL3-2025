@@ -3,19 +3,25 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using PBL3.Data;
 using PBL3.Models;
+using PBL3.Services;
 using Microsoft.Extensions.Logging; // Thêm using này
+using DotNetEnv;
+
+Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
 // --- Cấu hình Services ---
 builder.Services.AddControllersWithViews();
 
-//var connectionString = builder.Configuration.GetConnectionString("KienConnection")
-//    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
+
+builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));
+
+builder.Services.AddTransient<IEmailService, EmailService>();
 
 builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
 {

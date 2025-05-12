@@ -65,7 +65,7 @@ public class AccountController : Controller
                     else if (roles.Contains("Employee"))
                     {
                         // return RedirectToAction("Index", "Employee"); // Redirect đến Dashboard Employee
-                        return LocalRedirect(returnUrl ?? Url.Action("Index", "Employee"));
+                        return LocalRedirect(returnUrl ?? Url.Action("Index", "EmployeeDashboard"));
                     }
                     else // Mặc định là Passenger hoặc vai trò khác
                     {

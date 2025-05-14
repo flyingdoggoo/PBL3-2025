@@ -33,32 +33,32 @@
                         <li class="nav-item">
                             <a class="nav-link fw-medium" asp-area="" asp-controller="Home" asp-action="Index" fragment="search-form-section-anchor"><i class="fas fa-search me-1"></i>Tìm chuyến bay</a> @* Sửa lại link trỏ về form tìm kiếm trên trang chủ *@
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link fw-medium" href="#"><i class="fas fa-tags me-1"></i>Khuyến mãi</a>
-                        </li>
+                        
                         <li class="nav-item">
                             <a class="nav-link fw-medium" asp-controller="Home" asp-action="Privacy"><i class="fas fa-shield-alt me-1"></i>Chính sách</a> @* THÊM NÚT CHÍNH SÁCH *@
                         </li>
 
                         @if (User.Identity != null && User.Identity.IsAuthenticated)
                         {
+                            @if (!User.IsInRole("Admin") && !User.IsInRole("Employee"))
+                            {
+                                <li><a class="nav-link fw-medium" asp-controller="BookingHistory" asp-action="Index"><i class="fas fa-shield-alt me-1"></i>Lịch sử đặt vé</a></li>
+                            }
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle fw-medium" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     <i class="fas fa-user-circle me-1"></i> @User.Identity.Name
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                                     <li><a class="dropdown-item" asp-controller="Account" asp-action="Profile"><i class="fas fa-address-card me-2"></i>Hồ sơ của tôi</a></li>
-                                    @if (!User.IsInRole("Admin") && !User.IsInRole("Employee"))
-                                    {
-                                        <li><a class="dropdown-item" asp-controller="BookingHistory" asp-action="Index"><i class="fas fa-history me-2"></i>Lịch sử đặt vé</a></li>
-                                    }
+
+                                    
                                     @if (User.IsInRole("Admin"))
                                     {
                                         <li><a class="dropdown-item" asp-controller="SystemManager" asp-action="Index"><i class="fas fa-tachometer-alt me-2"></i>Trang quản trị</a></li>
                                     }
                                     else if (User.IsInRole("Employee"))
                                     {
-                                        <li><a class="dropdown-item" asp-controller="Employee" asp-action="Index"><i class="fas fa-briefcase me-2"></i>Trang nhân viên</a></li>
+                                        <li><a class="dropdown-item" asp-controller="EmployeeDashboard" asp-action="Index"><i class="fas fa-briefcase me-2"></i>Trang nhân viên</a></li>
                                     }
                                     <li><hr class="dropdown-divider"></li>
                                     <li>

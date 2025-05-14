@@ -7,6 +7,8 @@
     var departureEndDate = Model.DepartureDate.AddDays(1);
     var returnStartDate = Model.ReturnDate?.AddDays(-1);
     var returnEndDate = Model.ReturnDate?.AddDays(1);
+    var departureCityName = ViewData["DepartureCityName"] as string;
+    var arrivalCityName = ViewData["ArrivalCityName"] as string;
 }
 
 @if (Model == null)
@@ -23,8 +25,10 @@
             <div class="row">
                 <div class="col-md-6">
                     <p><strong>Loại vé:</strong> @(Model.TripType == "roundtrip" ? "Khứ hồi" : "Một chiều")</p>
-                    <p><strong>Điểm khởi hành:</strong> @Model.Airports.FirstOrDefault(a => a.Value == Model.DepartureAirportId.ToString())?.Text</p>
-                    <p><strong>Điểm đến:</strong> @Model.Airports.FirstOrDefault(a => a.Value == Model.ArrivalAirportId.ToString())?.Text</p>
+                    @* <p><strong>Điểm khởi hành:</strong> @Model.Airports.FirstOrDefault(a => a.Value == Model.DepartureAirportId.ToString())?.Text</p> *@
+                    @* <p><strong>Điểm đến:</strong> @Model.Airports.FirstOrDefault(a => a.Value == Model.ArrivalAirportId.ToString())?.Text</p> *@
+                    <p><strong>Điểm khởi hành:</strong> @(departureCityName ?? "Không rõ")</p> @* Hoặc @departureAirportText *@
+                    <p><strong>Điểm đến:</strong> @(arrivalCityName ?? "Không rõ")</p> @* Hoặc @arrivalAirportText *@
                 </div>
                 <div class="col-md-6">
                     <p><strong>Ngày đi:</strong> @Model.DepartureDate.ToString("dd/MM/yyyy")</p>

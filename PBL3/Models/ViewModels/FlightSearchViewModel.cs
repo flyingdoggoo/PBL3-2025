@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using PBL3.Models; // Cần using này để tham chiếu đến class Flight
 
@@ -40,6 +41,7 @@ namespace PBL3.Models.ViewModels // *** SỬA NAMESPACE ***
         public List<Flight>? OutboundFlights { get; set; } = new List<Flight>(); // Cho phép null
         public List<Flight>? ReturnFlights { get; set; } = new List<Flight>(); // Cho phép null
 
+        
         // Constructor để khởi tạo list có thể không cần nếu dùng nullable
         // public FlightSearchViewModel()
         // {

@@ -125,7 +125,12 @@ namespace PBL3.Controllers
             {
                 model.ReturnFlights = new List<Flight>(); // Khởi tạo rỗng nếu là một chiều
             }
-
+            var departureAirport = await _context.Airports.AsNoTracking()
+                                    .FirstOrDefaultAsync(a => a.Id == model.DepartureAirportId);
+            var arrivalAirport = await _context.Airports.AsNoTracking()
+                                          .FirstOrDefaultAsync(a => a.Id == model.ArrivalAirportId);
+            ViewData["DepartureCityName"] = departureAirport?.City;
+            ViewData["ArrivalCityName"] = arrivalAirport?.City;
             // Không cần load lại model.Airports ở đây vì SearchResults ViewModel đã có nó
             // model.Airports = await GetAirportsAsync();
             return View("SearchResults", model);

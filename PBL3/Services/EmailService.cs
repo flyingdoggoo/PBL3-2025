@@ -26,14 +26,14 @@ namespace PBL3.Services
                 From = new MailAddress(_smtpSettings.SenderEmail, _smtpSettings.SenderName),
                 Subject = subject,
                 Body = body,
-                IsBodyHtml = true, // Set to false if sending plain text
+                IsBodyHtml = true,
             };
             mailMessage.To.Add(toEmail);
 
             using (var smtpClient = new SmtpClient(_smtpSettings.Server, _smtpSettings.Port))
             {
                 smtpClient.Credentials = new NetworkCredential(_smtpSettings.Username, _smtpSettings.Password);
-                smtpClient.EnableSsl = _smtpSettings.EnableSsl; // Important for Gmail, SendGrid etc.
+                smtpClient.EnableSsl = _smtpSettings.EnableSsl;
 
                 try
                 {

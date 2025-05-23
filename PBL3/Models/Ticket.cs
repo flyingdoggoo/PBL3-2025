@@ -1,4 +1,4 @@
-﻿// File: Models/Ticket.cs (Sửa đổi)
+﻿
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -19,15 +19,15 @@ namespace PBL3.Models
         public int TicketId { get; set; }
 
         [Required]
-        public string PassengerId { get; set; } // FK đến AppUser.Id
+        public string PassengerId { get; set; }
 
         [Required]
-        public int FlightId { get; set; } // FK đến Flight.FlightId
+        public int FlightId { get; set; }
 
-        [Required(ErrorMessage = "Phải chọn một ghế cho vé.")] // **Quan trọng: Vé phải có ghế**
-        public int SeatId { get; set; } // **THAY THẾ SeatNumber bằng SeatId (FK)**
+        [Required(ErrorMessage = "Phải chọn một ghế cho vé.")]
+        public int SeatId { get; set; }
 
-        public int? SectionId { get; set; } // Có thể giữ hoặc bỏ nếu Seat đã có SectionId
+        public int? SectionId { get; set; }
         public string? BookingEmployeeId { get; set; }
 
         [Required]
@@ -40,16 +40,14 @@ namespace PBL3.Models
         [Required]
         [StringLength(20)]
         public TicketStatus Status { get; set; } = TicketStatus.Pending_Book;
-
-        // --- Navigation Properties ---
         [ForeignKey("PassengerId")]
         public virtual Passenger? Passenger { get; set; }
 
         [ForeignKey("FlightId")]
         public virtual Flight? Flight { get; set; }
 
-        [ForeignKey("SeatId")] // **Thêm ForeignKey cho Seat**
-        public virtual Seat? Seat { get; set; } // **Thêm Navigation Property đến Seat**
+        [ForeignKey("SeatId")]
+        public virtual Seat? Seat { get; set; }
 
         [ForeignKey("SectionId")]
         public virtual Section? Section { get; set; }

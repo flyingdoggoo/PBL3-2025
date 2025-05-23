@@ -1,0 +1,28 @@
+﻿@model PBL3.Models.AppUser
+@{
+    ViewData["Title"] = "Xác nhận xóa Hành khách";
+}
+
+<h3 class="text-danger">@ViewData["Title"]</h3>
+<hr />
+@await Html.PartialAsync("_StatusMessagePartial")
+
+<div class="alert alert-warning">
+    <strong>Bạn có chắc chắn muốn xóa tài khoản hành khách này không? Hành động này không thể hoàn tác.</strong>
+</div>
+
+<div>
+    <h4>Thông tin Hành khách</h4>
+    <dl class="row">
+        <dt class="col-sm-3">Họ và tên</dt>
+        <dd class="col-sm-9">@Html.DisplayFor(model => model.FullName)</dd>
+        <dt class="col-sm-3">Email</dt>
+        <dd class="col-sm-9">@Html.DisplayFor(model => model.Email)</dd>
+    </dl>
+
+    <form asp-action="Delete">
+        <input type="hidden" asp-for="Id" />
+        <button type="submit" class="btn btn-danger">Xác nhận Xóa</button>
+        <a asp-action="Index" class="btn btn-secondary">Hủy</a>
+    </form>
+</div>

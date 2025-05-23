@@ -3,7 +3,6 @@ using System.ComponentModel.DataAnnotations;
 
 namespace PBL3.Models
 {
-    // Lớp này kế thừa IdentityUser, chứa các thuộc tính chung
     public class AppUser : IdentityUser
     {
         [Required(ErrorMessage = "Họ tên là bắt buộc.")]
@@ -17,8 +16,6 @@ namespace PBL3.Models
 
         [StringLength(200, ErrorMessage = "Địa chỉ không quá 200 ký tự.")]
         [Display(Name = "Địa chỉ")]
-        public string? Address { get; set; } // Cho phép null
-
-        // KHÔNG cần thuộc tính Role ở đây, Identity quản lý riêng
+        public string? Address { get; set; }
     }
 }

@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity; // For UserManager
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PBL3.Data;
-using PBL3.Models; // Assuming AppUser is in PBL3.Models
+using PBL3.Models;
 using PBL3.Utils;
 using System;
 using System.Linq;
@@ -11,23 +11,19 @@ using System.Threading.Tasks;
 
 namespace PBL3.Controllers
 {
-    //[Authorize(Roles = "Admin,Employee")] // Default authorization for this controller
     public class BookingsController : Controller
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<BookingsController> _logger;
-        private readonly UserManager<AppUser> _userManager; // Inject UserManager
+        private readonly UserManager<AppUser> _userManager;
 
 
         public BookingsController(ApplicationDbContext context, ILogger<BookingsController> logger, UserManager<AppUser> userManager)
         {
             _context = context;
             _logger = logger;
-            _userManager = userManager; // Assign injected UserManager
+            _userManager = userManager;
         }
-
-        // GET: Bookings/Index (Quản lý danh sách vé)
-        // Inherits [Authorize(Roles = "Admin,Employee")] - Correct
         [Authorize(Roles = "Admin,Employee")]
         public async Task<IActionResult> Index(string sortOrder, string currentFilter, string searchString, int? pageNumber)
         {
@@ -69,9 +65,6 @@ namespace PBL3.Controllers
 
             return View(paginatedTickets);
         }
-
-        // GET: Bookings/Details/5 (Admin xem chi tiết)
-        // Inherits [Authorize(Roles = "Admin,Employee")] - Correct
         [Authorize(Roles = "Admin,Employee")]
         public async Task<IActionResult> Details(int? id)
         {
@@ -82,7 +75,7 @@ namespace PBL3.Controllers
                         .Include(t => t.Flight).ThenInclude(f => f.DepartureAirport)
                         .Include(t => t.Flight).ThenInclude(f => f.ArrivalAirport)
                         .Include(t => t.Section)
-                        .Include(t => t.BookingEmployee) // To see which employee booked/confirmed
+                        .Include(t => t.BookingEmployee)
                         .Include(t => t.Seat)
                         .AsNoTracking()
                         .FirstOrDefaultAsync(m => m.TicketId == id);
@@ -91,9 +84,6 @@ namespace PBL3.Controllers
 
             return View(ticket);
         }
-
-        // GET: Bookings/PendingCancellations (Admin xem danh sách chờ hủy)
-        // Inherits [Authorize(Roles = "Admin,Employee")] - Correct
         [Authorize(Roles = "Admin,Employee")]
         [HttpGet]
         public async Task<IActionResult> PendingCancellations(int? pageNumber)
@@ -109,9 +99,6 @@ namespace PBL3.Controllers
 
             return View(paginatedTickets);
         }
-
-        // GET: Bookings/ConfirmCancel/5 (Admin xem thông tin trước khi xác nhận hủy)
-        // Inherits [Authorize(Roles = "Admin,Employee")] - Correct
         [Authorize(Roles = "Admin,Employee")]
         [HttpGet]
         public async Task<IActionResult> ConfirmCancel(int? id)
@@ -133,16 +120,12 @@ namespace PBL3.Controllers
 
             return View(ticket);
         }
-
-        // POST: Bookings/ConfirmCancelPost/5 (Admin xác nhận hủy)
-        // Inherits [Authorize(Roles = "Admin,Employee")] - Correct
         [HttpPost]
         [ValidateAntiForgeryToken]
         [ActionName("ConfirmCancel")]
         [Authorize(Roles = "Admin,Employee")]
         public async Task<IActionResult> ConfirmCancelPost(int id)
         {
-            // save which employee confirmed the cancellation
             var ticket = await _context.Tickets
                                      .Include(t => t.Flight)
                                      .Include(t => t.Seat)
@@ -243,7 +226,7 @@ namespace PBL3.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,Employee")] 
-        public async Task<IActionResult> ConfirmBookingByEmployee(int id) // id là TicketId
+        public async Task<IActionResult> ConfirmBookingByEmployee(int id)
         {
             var ticket = await _context.Tickets
                                      .Include(t => t.Flight)
@@ -273,13 +256,13 @@ namespace PBL3.Controllers
                 return RedirectToAction(nameof(Details), new { id = ticket.TicketId });
             }
 
-            AppUser? currentUser = null; // Initialize currentUser
+            AppUser? currentUser = null;
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 ticket.Status = TicketStatus.Booked;
 
-                currentUser = await _userManager.GetUserAsync(User); // Get current user
+                currentUser = await _userManager.GetUserAsync(User);
                 if (currentUser != null)
                 {
                     ticket.BookingEmployeeId = currentUser.Id;
@@ -309,20 +292,19 @@ namespace PBL3.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,Employee, Passenger")] // Allows any authenticated user
-        public async Task<IActionResult> CancelPendingBookingByAnyone(int id) // id là TicketId
+        [Authorize(Roles = "Admin,Employee, Passenger")]
+        public async Task<IActionResult> CancelPendingBookingByAnyone(int id)
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
-                // Should not happen if [Authorize] is effective and user is logged in.
-                return Challenge(); // Or Unauthorized()
+                return Challenge();
             }
 
             var ticket = await _context.Tickets
                                      .Include(t => t.Flight)
                                      .Include(t => t.Seat)
-                                     .Include(t => t.Passenger) // Crucial for ownership check if Passenger entity links to AppUser
+                                     .Include(t => t.Passenger)
                                      .FirstOrDefaultAsync(t => t.TicketId == id);
 
             if (ticket == null)
@@ -336,7 +318,7 @@ namespace PBL3.Controllers
             {
                 canCancel = true;
             }
-            else // User is not Admin/Employee, so they must be the owner (Passenger)
+            else
             {
                 
                 if (ticket.Passenger != null && ticket.Passenger.Id == user.Id) 
@@ -348,7 +330,6 @@ namespace PBL3.Controllers
             if (!canCancel)
             {
                 TempData["ErrorMessage"] = "Bạn không có quyền thực hiện hành động này với vé này.";
-                // Redirect based on user's likely origin
                 return User.IsInRole("Admin") || User.IsInRole("Employee") ? RedirectToAction(nameof(Details), new { id = id }) : RedirectToAction("Details", "BookingHistory", new { id = id });
             }
 
@@ -407,13 +388,11 @@ namespace PBL3.Controllers
                 _logger.LogError(ex, $"Error when {user.UserName} cancelling pending booking for Ticket ID {ticket.TicketId}.");
                 TempData["ErrorMessage"] = "Đã xảy ra lỗi trong quá trình hủy vé. Vui lòng thử lại.";
             }
-
-            // Redirect based on user's role
             if (User.IsInRole("Admin") || User.IsInRole("Employee"))
             {
                 return RedirectToAction(nameof(Details), new { id = ticket.TicketId });
             }
-            return RedirectToAction("Index", "BookingHistory"); // Passenger goes to their booking history
+            return RedirectToAction("Index", "BookingHistory");
         }
     }
 }

@@ -1,35 +1,28 @@
-﻿// ViewModels/EmployeeViewModels.cs
+﻿
 using System.ComponentModel.DataAnnotations;
-using PBL3.Models; // Adjust namespace if needed
+using PBL3.Models;
 
-namespace PBL3.Models.ViewModels // Adjust namespace if needed
+namespace PBL3.Models.ViewModels
 {
-    // ViewModel for the Index page list and filtering/sorting
     public class EmployeeIndexViewModel
     {
         public IEnumerable<AppUser> Employees { get; set; } = new List<AppUser>();
         public string? SearchString { get; set; }
-        public string? SortField { get; set; } = "FullName"; // Default sort
-        public string? SortOrder { get; set; } = "asc"; // Default order
+        public string? SortField { get; set; } = "FullName";
+        public string? SortOrder { get; set; } = "asc";
         public Dictionary<string, string> SortFields { get; } = new()
         {
             { "FullName", "Name" },
             { "Email", "Email" },
             { "Age", "Age" },
-            { "AddedDate", "Added Date" } // Assuming Employee has AddedDate
+            { "AddedDate", "Added Date" }
         };
         public Dictionary<string, string> SortOrders { get; } = new()
         {
             { "asc", "Ascending" },
             { "desc", "Descending" }
         };
-
-        // Optional: Add properties for pagination if needed
-        // public int CurrentPage { get; set; }
-        // public int TotalPages { get; set; }
     }
-
-    // ViewModel for Adding a new Employee
     public class AddEmployeeViewModel
     {
         [Required]
@@ -53,14 +46,12 @@ namespace PBL3.Models.ViewModels // Adjust namespace if needed
         [Display(Name = "Full Name")]
         public string FullName { get; set; }
 
-        [Range(18, 120, ErrorMessage = "Age must be between 18 and 120.")] // Assuming minimum age 18 for employee
+        [Range(18, 120, ErrorMessage = "Age must be between 18 and 120.")]
         public int Age { get; set; }
 
         [StringLength(200)]
         public string? Address { get; set; }
     }
-
-    // ViewModel for Promotion Confirmation
     public class PromoteEmployeeViewModel
     {
         [Required]

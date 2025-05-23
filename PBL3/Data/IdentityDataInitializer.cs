@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Logging; // Thêm nếu muốn dùng ILogger
-using Microsoft.Extensions.DependencyInjection; // Thêm cho GetRequiredService
-using PBL3.Models; // Namespace chứa AppUser, Passenger, Employee, SystemManager
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
+using PBL3.Models;
 using System;
-using System.Linq; // Thêm cho Select
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace PBL3.Data
@@ -13,14 +13,12 @@ namespace PBL3.Data
         public static async Task SeedRolesAndAdminUserAsync(IServiceProvider serviceProvider)
         {
             var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
-            var logger = loggerFactory.CreateLogger("IdentityDataInitializer"); // Tạo logger
+            var logger = loggerFactory.CreateLogger("IdentityDataInitializer");
 
             var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
             var userManager = serviceProvider.GetRequiredService<UserManager<AppUser>>();
 
             logger.LogInformation("Starting identity seeding (Roles, Admin, Test User)...");
-
-            // --- 1. Tạo các Roles cần thiết ---
             string[] roleNames = { "Admin", "Employee", "Passenger" };
             foreach (var roleName in roleNames)
             {
@@ -34,20 +32,18 @@ namespace PBL3.Data
                     }
                 }
             }
-
-            // --- 2. Tạo tài khoản Admin mặc định ---
             string adminEmail = "admin@gmail.com";
-            string adminPassword = "123456"; // **LƯU Ý: Mật khẩu yếu cho test, đổi khi production**
+            string adminPassword = "123456";
 
             var adminUser = await userManager.FindByEmailAsync(adminEmail);
             if (adminUser == null)
             {
                 logger.LogInformation($"Creating admin user: {adminEmail}");
-                var newAdminUser = new SystemManager // Admin cũng là SystemManager (và Employee)
+                var newAdminUser = new SystemManager
                 {
                     UserName = adminEmail,
                     Email = adminEmail,
-                    FullName = "Administrator Prime", // Tên đầy đủ
+                    FullName = "Administrator Prime",
                     Age = 35,
                     Address = "Head Office, Capital City",
                     EmailConfirmed = true,
@@ -57,7 +53,7 @@ namespace PBL3.Data
                 if (createAdminResult.Succeeded)
                 {
                     await userManager.AddToRoleAsync(newAdminUser, "Admin");
-                    await userManager.AddToRoleAsync(newAdminUser, "Employee"); // Admin cũng là Employee
+                    await userManager.AddToRoleAsync(newAdminUser, "Employee");
                     logger.LogInformation($"Admin user {adminEmail} created and roles assigned.");
                 }
                 else
@@ -71,25 +67,22 @@ namespace PBL3.Data
                 if (!await userManager.IsInRoleAsync(adminUser, "Admin")) await userManager.AddToRoleAsync(adminUser, "Admin");
                 if (!await userManager.IsInRoleAsync(adminUser, "Employee")) await userManager.AddToRoleAsync(adminUser, "Employee");
             }
-
-
-            // --- 3. TẠO TÀI KHOẢN TEST PASSENGER ---
             string passengerTestEmail = "test@gmail.com";
-            string passengerTestPassword = "123456"; // Mật khẩu cho user test
+            string passengerTestPassword = "123456";
 
             var testPassenger = await userManager.FindByEmailAsync(passengerTestEmail);
             if (testPassenger == null)
             {
                 logger.LogInformation($"Creating test passenger user: {passengerTestEmail}");
-                var newTestPassenger = new Passenger // Tạo đối tượng Passenger
+                var newTestPassenger = new Passenger
                 {
                     UserName = passengerTestEmail,
                     Email = passengerTestEmail,
                     FullName = "Test Passenger User",
                     Age = 28,
                     Address = "123 Test Street, Sample City",
-                    EmailConfirmed = true, // Xác nhận email để đăng nhập ngay
-                    PassportNumber = "P01234567" // Thuộc tính riêng của Passenger
+                    EmailConfirmed = true,
+                    PassportNumber = "P01234567"
                 };
 
                 var createPassengerResult = await userManager.CreateAsync(newTestPassenger, passengerTestPassword);
@@ -108,8 +101,6 @@ namespace PBL3.Data
                 logger.LogInformation($"Test passenger user {passengerTestEmail} already exists. Ensuring 'Passenger' role...");
                 if (!await userManager.IsInRoleAsync(testPassenger, "Passenger")) await userManager.AddToRoleAsync(testPassenger, "Passenger");
             }
-
-            // --- 4. TẠO TÀI KHOẢN TEST EMPLOYEE (Nếu cần) ---
             string employeeTestEmail = "employee@gmail.com";
             string employeeTestPassword = "123456";
 

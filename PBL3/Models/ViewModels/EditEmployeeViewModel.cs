@@ -5,9 +5,7 @@ namespace PBL3.Models.ViewModels
     public class EditEmployeeViewModel
     {
         [Required]
-        public string Id { get; set; } // Cần Id để xác định user
-
-        // Email thường không cho sửa trực tiếp ở form này
+        public string Id { get; set; }
         [Display(Name = "Email (Không thể sửa)")]
         public string Email { get; set; }
 
@@ -17,7 +15,7 @@ namespace PBL3.Models.ViewModels
         public string FullName { get; set; }
 
         [Required(ErrorMessage = "Vui lòng nhập tuổi.")]
-        [Range(18, 70)] // Tuổi nhân viên
+        [Range(18, 70)]
         [Display(Name = "Tuổi")]
         public int Age { get; set; }
 

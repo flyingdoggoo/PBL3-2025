@@ -8,7 +8,7 @@ namespace PBL3.Models.ViewModels
         public string UserId { get; set; }
 
         [Display(Name = "Email Nhân viên")]
-        public string Email { get; set; } // Chỉ hiển thị
+        public string Email { get; set; } 
 
         [Required(ErrorMessage = "Vui lòng nhập mật khẩu mới.")]
         [StringLength(100, ErrorMessage = "{0} phải dài ít nhất {2} ký tự.", MinimumLength = 6)]

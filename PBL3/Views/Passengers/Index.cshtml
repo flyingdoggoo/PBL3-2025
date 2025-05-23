@@ -1,0 +1,100 @@
+﻿@model PBL3.Utils.PaginatedList<PBL3.Models.AppUser>
+@{
+    ViewData["Title"] = "Quản lý Hành khách";
+}
+
+<h1>@ViewData["Title"]</h1>
+<hr />
+@await Html.PartialAsync("_StatusMessagePartial")
+
+<form asp-action="Index" method="get" class="mb-3">
+    <div class="row g-2">
+        <div class="col-md-8">
+            <input type="text" name="SearchString" value="@ViewData["CurrentFilter"]" class="form-control" placeholder="Tìm theo tên hoặc email hành khách..." />
+        </div>
+        <div class="col-md-auto">
+            <button type="submit" class="btn btn-outline-primary"><i class="fas fa-search me-1"></i> Tìm</button>
+            <a asp-action="Index" class="btn btn-outline-secondary"><i class="fas fa-eraser me-1"></i> Xóa lọc</a>
+        </div>
+    </div>
+</form>
+
+<div class="table-responsive">
+    <table class="table table-bordered table-hover table-striped">
+        <thead class="table-light">
+            <tr>
+                <th>
+                    <a asp-action="Index" asp-route-sortOrder="@ViewData["NameSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]">
+                        @Html.DisplayNameFor(model => model.FirstOrDefault().FullName)
+                    </a>
+                </th>
+                <th>
+                    <a asp-action="Index" asp-route-sortOrder="@ViewData["EmailSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]">
+                        @Html.DisplayNameFor(model => model.FirstOrDefault().Email)
+                    </a>
+                </th>
+                <th>
+                    <a asp-action="Index" asp-route-sortOrder="@ViewData["AgeSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]">
+                        @Html.DisplayNameFor(model => model.FirstOrDefault().Age)
+                    </a>
+                </th>
+                <th>@Html.DisplayNameFor(model => model.FirstOrDefault().Address)</th>
+                <th>Hộ chiếu</th>
+                <th>Hành động</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                var passengerItem = item as Passenger;
+                <tr>
+                    <td>@Html.DisplayFor(modelItem => item.FullName)</td>
+                    <td>@Html.DisplayFor(modelItem => item.Email)</td>
+                    <td>@Html.DisplayFor(modelItem => item.Age)</td>
+                    <td>@Html.DisplayFor(modelItem => item.Address)</td>
+                    <td>@(passengerItem?.PassportNumber ?? "N/A")</td>
+                    <td>
+                        <div class="btn-group" role="group">
+                            @if (User.IsInRole("Employee"))
+                            {
+                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary" title="Sửa"><i class="fas fa-edit"></i></a>
+                            }
+                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-info" title="Chi tiết"><i class="fas fa-info-circle"></i></a>
+                            <a asp-action="ResetPassword" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning" title="Reset Mật khẩu"><i class="fas fa-key"></i></a>
+                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger" title="Xóa"><i class="fas fa-user-times"></i></a>
+                        </div>
+                    </td>
+                </tr>
+            }
+            @if (!Model.Any())
+            {
+                <tr>
+                    <td colspan="6" class="text-center">Không tìm thấy hành khách nào.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@{
+    var prevDisabled = !Model.HasPreviousPage ? "disabled" : "";
+    var nextDisabled = !Model.HasNextPage ? "disabled" : "";
+}
+<nav aria-label="Page navigation">
+    <ul class="pagination justify-content-center">
+        <li class="page-item @prevDisabled">
+            <a class="page-link" asp-action="Index"
+               asp-route-sortOrder="@ViewData["CurrentSort"]"
+               asp-route-pageNumber="@(Model.PageIndex - 1)"
+               asp-route-currentFilter="@ViewData["CurrentFilter"]">Trước</a>
+        </li>
+        <li class="page-item disabled"><span class="page-link">Trang @Model.PageIndex / @Model.TotalPages</span></li>
+        <li class="page-item @nextDisabled">
+            <a class="page-link" asp-action="Index"
+               asp-route-sortOrder="@ViewData["CurrentSort"]"
+               asp-route-pageNumber="@(Model.PageIndex + 1)"
+               asp-route-currentFilter="@ViewData["CurrentFilter"]">Sau</a>
+        </li>
+    </ul>
+    <p class="text-center text-muted small">Tổng số: @Model.TotalCount hành khách</p>
+</nav>

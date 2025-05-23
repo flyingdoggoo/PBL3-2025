@@ -2,7 +2,6 @@
 @{
     ViewData["Title"] = "Kết quả tìm kiếm";
 
-    // Tính toán khoảng ngày tìm kiếm
     var departureStartDate = Model.DepartureDate.AddDays(-1);
     var departureEndDate = Model.DepartureDate.AddDays(1);
     var returnStartDate = Model.ReturnDate?.AddDays(-1);
@@ -25,8 +24,6 @@
             <div class="row">
                 <div class="col-md-6">
                     <p><strong>Loại vé:</strong> @(Model.TripType == "roundtrip" ? "Khứ hồi" : "Một chiều")</p>
-                    @* <p><strong>Điểm khởi hành:</strong> @Model.Airports.FirstOrDefault(a => a.Value == Model.DepartureAirportId.ToString())?.Text</p> *@
-                    @* <p><strong>Điểm đến:</strong> @Model.Airports.FirstOrDefault(a => a.Value == Model.ArrivalAirportId.ToString())?.Text</p> *@
                     <p><strong>Điểm khởi hành:</strong> @(departureCityName ?? "Không rõ")</p> @* Hoặc @departureAirportText *@
                     <p><strong>Điểm đến:</strong> @(arrivalCityName ?? "Không rõ")</p> @* Hoặc @arrivalAirportText *@
                 </div>

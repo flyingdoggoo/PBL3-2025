@@ -37,44 +37,36 @@ public class AccountController : Controller
     }
 
     [HttpPost]
-    [AllowAnonymous] // Thường thì Login Post không cần Authorize
-    [ValidateAntiForgeryToken] // Nên thêm ValidateAntiForgeryToken
-    public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null) // Sử dụng ViewModel chuẩn hơn
+    [AllowAnonymous] 
+    [ValidateAntiForgeryToken] 
+    public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
     {
-        ViewData["ReturnUrl"] = returnUrl; // Lưu lại returnUrl
+        ViewData["ReturnUrl"] = returnUrl; 
         if (ModelState.IsValid)
         {
-            // Tìm user bằng Email
             var user = await _userManager.FindByEmailAsync(model.Email);
             if (user != null)
             {
                 // Đăng nhập bằng PasswordSignInAsync
-                var result = await _signInManager.PasswordSignInAsync(user, model.Password, model.RememberMe, lockoutOnFailure: false); // lockoutOnFailure: xem xét chính sách khóa tài khoản
+                var result = await _signInManager.PasswordSignInAsync(user, model.Password, model.RememberMe, lockoutOnFailure: false); 
 
                 if (result.Succeeded)
                 {
-                    // Lấy vai trò của người dùng
                     var roles = await _userManager.GetRolesAsync(user);
 
-                    // Điều hướng dựa trên vai trò cao nhất (ví dụ: nếu vừa là Admin vừa là Employee thì vào Admin)
                     if (roles.Contains("Admin"))
                     {
-                        // return RedirectToAction("Index", "SystemManager"); // Redirect đến Dashboard Admin
-                        return LocalRedirect(returnUrl ?? Url.Action("Index", "SystemManager")); // Ưu tiên returnUrl
+                        return LocalRedirect(returnUrl ?? Url.Action("Index", "SystemManager")); 
                     }
                     else if (roles.Contains("Employee"))
                     {
-                        // return RedirectToAction("Index", "Employee"); // Redirect đến Dashboard Employee
                         return LocalRedirect(returnUrl ?? Url.Action("Index", "EmployeeDashboard"));
                     }
-                    else // Mặc định là Passenger hoặc vai trò khác
+                    else 
                     {
-                        // return RedirectToAction("Index", "Passenger"); // Redirect đến Dashboard Passenger
-                        return LocalRedirect(returnUrl ?? Url.Action("Index", "Home")); // Hoặc trang chủ nếu ko có dashboard riêng
+                        return LocalRedirect(returnUrl ?? Url.Action("Index", "Home"));
                     }
                 }
-                // if (result.RequiresTwoFactor) { /* Xử lý 2FA */ }
-                // if (result.IsLockedOut) { /* Xử lý bị khóa */ }
                 else
                 {
                     ModelState.AddModelError(string.Empty, "Thông tin đăng nhập không hợp lệ.");
@@ -89,7 +81,6 @@ public class AccountController : Controller
 
         }
 
-        // If we got this far, something failed, redisplay form
         return View(model);
     }
 
@@ -103,42 +94,33 @@ public class AccountController : Controller
     [HttpPost]
     [AllowAnonymous]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Register(RegisterViewModel model) // Sử dụng ViewModel
+    public async Task<IActionResult> Register(RegisterViewModel model) 
     {
         if (ModelState.IsValid)
         {
-            // Tạo user mới
-            var user = new Passenger // Tạo trực tiếp Passenger nếu đăng ký mặc định là Passenger
+            var user = new Passenger 
             {
-                UserName = model.Email, // Identity yêu cầu UserName
+                UserName = model.Email, 
                 Email = model.Email,
                 FullName = model.FullName,
                 Age = model.Age,
                 Address = model.Address,
-                // KHÔNG set user.Role ở đây
             };
 
             var result = await _userManager.CreateAsync(user, model.Password);
             if (result.Succeeded)
             {
-                // Đảm bảo vai trò "Passenger" tồn tại
                 if (!await _roleManager.RoleExistsAsync("Passenger"))
                 {
                     await _roleManager.CreateAsync(new IdentityRole("Passenger"));
                 }
-                // Gán vai trò "Passenger" cho user mới
                 await _userManager.AddToRoleAsync(user, "Passenger");
 
-                // Có thể tự động đăng nhập user sau khi đăng ký thành công
-                // await _signInManager.SignInAsync(user, isPersistent: false);
-                // return RedirectToAction("Index", "Home");
-
                 TempData["SuccessMessage"] = "Đăng ký thành công! Vui lòng đăng nhập.";
-                return RedirectToAction(nameof(Login)); // Chuyển đến trang đăng nhập
+                return RedirectToAction(nameof(Login));
             }
             foreach (var error in result.Errors)
             {
-                // Xử lý lỗi trùng email riêng biệt cho rõ ràng
                 if (error.Code == "DuplicateUserName" || error.Code == "DuplicateEmail")
                 {
                     ModelState.AddModelError("Email", "Email đã được sử dụng.");
@@ -150,35 +132,15 @@ public class AccountController : Controller
             }
         }
 
-        // If we got this far, something failed, redisplay form
         return View(model);
     }
-
-
-    //[Authorize(Roles = "Admin")]
-    //public IActionResult AdminDashboard()
-    //{
-    //    return RedirectToAction("Index", "SystemManager");
-    //}
-
-    //[Authorize(Roles = "Passenger")]
-    //public IActionResult PassengerDashboard()
-    //{
-    //    return RedirectToAction("Index", "Passenger");
-    //}
-
-    //[Authorize(Roles = "Employee")]
-    //public IActionResult EmployeeDashboard()
-    //{
-    //    return RedirectToAction("Index", "Employee");
-    //}
 
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Logout()
     {
         await _signInManager.SignOutAsync();
-        return RedirectToAction("Index", "Home"); // Về trang chủ sau khi logout
+        return RedirectToAction("Index", "Home"); 
     }
     [Authorize]
     public async Task<IActionResult> Profile()
@@ -188,26 +150,24 @@ public class AccountController : Controller
         {
             return NotFound($"Không thể tải thông tin người dùng với ID '{_userManager.GetUserId(User)}'.");
         }
-        // Cần ViewModel để hiển thị thông tin an toàn hơn, tránh lộ các thuộc tính của IdentityUser
         var model = new UserProfileViewModel
         {
             Email = user.Email,
             FullName = user.FullName,
             Age = user.Age,
             Address = user.Address,
-            // Thêm các trường khác nếu cần
         };
         return View(model);
     }
 
     [Authorize]
     [HttpGet]
-    public async Task<IActionResult> EditProfile() // Đổi tên action cho rõ ràng
+    public async Task<IActionResult> EditProfile() 
     {
         var user = await _userManager.GetUserAsync(User);
         if (user == null) return NotFound();
 
-        var model = new EditProfileViewModel // Dùng ViewModel riêng cho Edit
+        var model = new EditProfileViewModel 
         {
             FullName = user.FullName,
             Age = user.Age,
@@ -251,7 +211,7 @@ public class AccountController : Controller
         {
             ModelState.AddModelError(string.Empty, error.Description);
         }
-        return View(model); // Trả về view edit với lỗi
+        return View(model); 
     }
 
     [Authorize]
@@ -277,7 +237,6 @@ public class AccountController : Controller
             return NotFound();
         }
 
-        // Thay đổi mật khẩu
         var result = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
         if (result.Succeeded)
         {
@@ -303,7 +262,7 @@ public class AccountController : Controller
     }
 
     [HttpGet]
-    [AllowAnonymous] // Forgot password should be accessible without login
+    [AllowAnonymous] 
     public IActionResult ForgotPassword()
     {
         return View();
@@ -319,13 +278,10 @@ public class AccountController : Controller
             var user = await _userManager.FindByEmailAsync(model.Email);
             if (user == null)
             {
-                // Still don't reveal user existence.
-                // Instead of a separate confirmation page, set a message and redirect to ResetPassword.
                 TempData["InfoMessage"] = "If an account with that email exists, an OTP has been sent. Please check your email.";
                 return RedirectToAction(nameof(ResetPassword), new { email = model.Email }); // Pass email
             }
 
-            // Proceed with OTP generation and sending
             bool otpSent = await SendNewOtpForUser(user, model.Email);
 
             if (otpSent)
@@ -333,13 +289,9 @@ public class AccountController : Controller
                 TempData["InfoMessage"] = "An OTP has been sent to your email. Please enter it below to reset your password.";
                 return RedirectToAction(nameof(ResetPassword), new { email = model.Email });
             }
-            else
-            {
-                // Error message already set by SendNewOtpForUser in ModelState
-                // Fall through to return View(model)
-            }
+        
         }
-        return View(model); // If ModelState invalid or OTP sending failed
+        return View(model); 
     }
 
     private async Task<bool> SendNewOtpForUser(AppUser user, string emailForSending)
@@ -349,15 +301,13 @@ public class AccountController : Controller
         var now = DateTime.UtcNow;
         var expiryTime = now.AddMinutes(OtpValidityMinutes);
 
-        // Invalidate/Delete previous active password reset OTPs for this user
         var previousOtps = await _context.UserOtps
             .Where(o => o.UserId == user.Id && !o.IsVerified && o.ExpiryTimestampUtc > now)
             .ToListAsync();
 
         if (previousOtps.Any())
         {
-            _context.UserOtps.RemoveRange(previousOtps); // Delete old OTPs
-            // Or mark them as IsVerified = true if you prefer to keep a record
+            _context.UserOtps.RemoveRange(previousOtps); 
         }
 
         var userOtpRecord = new UserOtp
@@ -370,12 +320,11 @@ public class AccountController : Controller
         };
 
         _context.UserOtps.Add(userOtpRecord);
-        // Save changes after adding new OTP and removing/invalidating old ones
         try
         {
             await _context.SaveChangesAsync();
         }
-        catch (DbUpdateException ex) // Handle potential DB errors
+        catch (DbUpdateException ex) 
         {
             System.Diagnostics.Debug.WriteLine($"Error saving OTP to DB: {ex.Message}");
             ModelState.AddModelError(string.Empty, "A database error occurred. Please try again.");
@@ -393,13 +342,12 @@ public class AccountController : Controller
                             $"<p>Thanks,<br/>Your Application Team</p>";
 
             await _emailService.SendEmailAsync(emailForSending, emailSubject, emailBody);
-            return true; // OTP sent successfully
+            return true; 
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Error sending OTP email: {ex.Message}");
             ModelState.AddModelError(string.Empty, "An error occurred while trying to send the OTP. Please try again later.");
-            // If email sending fails, remove the OTP record we just added.
             _context.UserOtps.Remove(userOtpRecord);
             try
             {
@@ -409,7 +357,7 @@ public class AccountController : Controller
             {
                 System.Diagnostics.Debug.WriteLine($"Error cleaning up OTP from DB after failed send: {dbEx.Message}");
             }
-            return false; // OTP sending failed
+            return false; 
         }
     }
 
@@ -418,7 +366,7 @@ public class AccountController : Controller
     public IActionResult ResetPassword(string email, string otp = "")
     {
         var model = new ResetPasswordViewModel { Email = email, Otp = otp };
-        ViewBag.InfoMessage = TempData["InfoMessage"]; // Pass along messages from ForgotPassword
+        ViewBag.InfoMessage = TempData["InfoMessage"]; 
         return View(model);
     }
 
@@ -457,8 +405,7 @@ public class AccountController : Controller
 
         if (result.Succeeded)
         {
-            userOtpRecord.IsVerified = true; // Mark as used
-            // _context.UserOtps.Remove(userOtpRecord); // Or delete
+            userOtpRecord.IsVerified = true; 
             await _context.SaveChangesAsync();
 
             TempData["SuccessMessage"] = "Your password has been reset successfully. Please log in with your new password.";
@@ -475,27 +422,24 @@ public class AccountController : Controller
         return View(model);
     }
 
-    // POST: /Account/ResendOtp
     [HttpPost]
     [AllowAnonymous]
-    [ValidateAntiForgeryToken] // Important for POST actions
-    public async Task<IActionResult> ResendOtp(string email) // Expecting email from the form
+    [ValidateAntiForgeryToken] 
+    public async Task<IActionResult> ResendOtp(string email) 
     {
         if (string.IsNullOrEmpty(email))
         {
             TempData["ErrorMessage"] = "Email address is required to resend OTP.";
-            return RedirectToAction(nameof(ResetPassword)); // Redirect back, user needs to enter email if missing
+            return RedirectToAction(nameof(ResetPassword)); 
         }
 
         var user = await _userManager.FindByEmailAsync(email);
         if (user == null)
         {
             TempData["InfoMessage"] = "If an account with that email exists, a new OTP has been sent.";
-            // Don't reveal user non-existence. Redirect to ResetPassword page with the email prefilled.
             return RedirectToAction(nameof(ResetPassword), new { email = email });
         }
 
-        // Use the refactored method to send a new OTP
         bool otpSent = await SendNewOtpForUser(user, email);
 
         if (otpSent)
@@ -504,7 +448,6 @@ public class AccountController : Controller
         }
         else
         {
-            // Check if ModelState has errors and transfer to TempData if needed.
             if (ModelState.Any(m => m.Value.Errors.Any()))
             {
                 TempData["ErrorMessage"] = ModelState.SelectMany(m => m.Value.Errors)
@@ -512,7 +455,6 @@ public class AccountController : Controller
                                            ?? "An unknown error occurred while resending OTP.";
             }
         }
-        // Always redirect back to the ResetPassword page, prefilling the email.
         return RedirectToAction(nameof(ResetPassword), new { email = email });
     }
 }

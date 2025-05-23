@@ -17,11 +17,11 @@ namespace PBL3.Models
 
         [Required(ErrorMessage = "Vui lòng nhập sân bay đi.")]
         [Display(Name = "Sân bay đi")]
-        public int StartingDestination { get; set; } // FK đến Airport.Id
+        public int StartingDestination { get; set; }
 
         [Required(ErrorMessage = "Vui lòng nhập sân bay đến.")]
         [Display(Name = "Sân bay đến")]
-        public int ReachingDestination { get; set; } // FK đến Airport.Id
+        public int ReachingDestination { get; set; }
 
         [Required(ErrorMessage = "Vui lòng nhập thời gian khởi hành.")]
         [Display(Name = "Thời gian khởi hành")]
@@ -40,22 +40,18 @@ namespace PBL3.Models
         [Column(TypeName = "decimal(18, 2)")]
         [Range(0.01, (double)decimal.MaxValue, ErrorMessage = "Giá vé phải lớn hơn 0.")]
         [Display(Name = "Giá vé (từ)")]
-        public decimal Price { get; set; } // Giá cơ sở
-
-        // [Required(ErrorMessage = "Vui lòng nhập hãng bay.")]
+        public decimal Price { get; set; }
         [StringLength(100)]
         [Display(Name = "Hãng bay")]
         public string Airline { get; set; }
 
         [Required(ErrorMessage = "Vui lòng nhập số ghế còn trống.")]
-        [Range(0, 1000, ErrorMessage = "Số ghế trống phải từ 0.")] // Nên <= Capacity
+        [Range(0, 1000, ErrorMessage = "Số ghế trống phải từ 0.")]
         [Display(Name = "Số ghế còn trống")]
         public int AvailableSeats { get; set; }
 
         [Display(Name = "Khoảng cách (km)")]
         public int Distance { get; set; }
-
-        // --- Navigation Properties ---
         [ForeignKey("StartingDestination")]
         public virtual Airport? DepartureAirport { get; set; }
 

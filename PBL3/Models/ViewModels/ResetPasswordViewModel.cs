@@ -14,7 +14,7 @@ namespace PBL3.Models.ViewModels
     {
         [Required]
         [EmailAddress]
-        public string Email { get; set; } // Often hidden, carried over
+        public string Email { get; set; }
 
         [Required]
         [StringLength(6, MinimumLength = 6, ErrorMessage = "OTP must be 6 digits.")]

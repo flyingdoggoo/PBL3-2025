@@ -1,5 +1,4 @@
-﻿@* File: Views/EmployeeDashboard/Index.cshtml *@
-@{
+﻿@{
     ViewData["Title"] = "Employee Dashboard";
 }
 
@@ -9,18 +8,19 @@
 
 <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
     <div class="col">
-        <div class="card h-100 shadow-sm border-primary">
-            <div class="card-header bg-primary text-white"><i class="fas fa-plane-departure me-2"></i>Quản lý Chuyến bay</div>
+        <div class="card h-100 shadow-sm border-success">
+            <div class="card-header bg-success text-white"><i class="fas fa-users me-2"></i>Quản lý Hành khách</div>
             <div class="card-body d-flex flex-column">
-                <p class="card-text">Xem, thêm, sửa, xóa thông tin các chuyến bay.</p>
+                <p class="card-text">Xem, sửa thông tin và quản lý tài khoản hành khách.</p>
                 <div class="mt-auto">
-                    <a asp-controller="Flights" asp-action="Index" class="btn btn-outline-primary stretched-link">
+                    <a asp-controller="Passengers" asp-action="Index" class="btn btn-outline-success stretched-link">
                         <i class="fas fa-arrow-right me-1"></i> Đi đến
                     </a>
                 </div>
             </div>
         </div>
     </div>
+
     <div class="col">
         <div class="card h-100 shadow-sm border-warning">
             <div class="card-header bg-warning text-dark"><i class="fas fa-ticket-alt me-2"></i>Quản lý Đặt vé</div>
@@ -34,6 +34,7 @@
             </div>
         </div>
     </div>
+
     <div class="col">
         <div class="card h-100 shadow-sm border-danger">
             <div class="card-header bg-danger text-white"><i class="fas fa-user-clock me-2"></i>Yêu cầu Hủy vé</div>
@@ -47,6 +48,7 @@
             </div>
         </div>
     </div>
+
     <div class="col">
         <div class="card h-100 shadow-sm border-info">
             <div class="card-header bg-info text-white"><i class="fas fa-chart-line me-2"></i>Thống kê</div>

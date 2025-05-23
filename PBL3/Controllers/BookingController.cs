@@ -26,16 +26,13 @@ namespace PBL3.Controllers
             _userManager = userManager;
             _logger = logger;
         }
-
-        // GET: Booking/StartBooking?flightId=5&passengers=2
-        // Action này giờ sẽ là trang chọn ghế và nhập thông tin hành khách
         [HttpGet]
         public async Task<IActionResult> StartBooking(int? flightId, int passengers = 1)
         {
             _logger.LogInformation("GET SelectSeats called. FlightId: {FlightId}, Passengers: {Passengers}", flightId, passengers);
 
             if (flightId == null) return BadRequest("Thiếu mã chuyến bay.");
-            const int maxPassengersPerBooking = 6; // Giới hạn số lượng hành khách
+            const int maxPassengersPerBooking = 6;
             if (passengers < 1 || passengers > maxPassengersPerBooking)
             {
                 TempData["ErrorMessage"] = $"Số lượng hành khách không hợp lệ (1-{maxPassengersPerBooking}).";
@@ -45,8 +42,8 @@ namespace PBL3.Controllers
             var flight = await _context.Flights
                                       .Include(f => f.DepartureAirport)
                                       .Include(f => f.ArrivalAirport)
-                                      .Include(f => f.Sections) // *** QUAN TRỌNG: Include Sections của chuyến bay ***
-                                          .ThenInclude(sec => sec.Seats.Where(s => s.Status == "Available" || s.TicketId == null)) // Chỉ lấy ghế Available
+                                      .Include(f => f.Sections)
+                                          .ThenInclude(sec => sec.Seats.Where(s => s.Status == "Available" || s.TicketId == null))
                                       .AsNoTracking()
                                       .FirstOrDefaultAsync(f => f.FlightId == flightId);
 
@@ -54,8 +51,6 @@ namespace PBL3.Controllers
 
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Challenge();
-
-            // Đếm tổng số ghế thực sự Available từ các Section đã include
             int totalActualAvailableSeats = flight.Sections.SelectMany(sec => sec.Seats).Count(s => s.Status == "Available");
 
             if (totalActualAvailableSeats < passengers)
@@ -63,19 +58,16 @@ namespace PBL3.Controllers
                 TempData["ErrorMessage"] = $"Chuyến bay {flight.FlightNumber} chỉ còn {totalActualAvailableSeats} ghế trống, không đủ cho {passengers} hành khách.";
                 return RedirectToAction("Details", "FlightSearch", new { id = flightId });
             }
-
-            // --- Tạo SeatViewModel với giá đã tính toán ---
             var seatLayout = new List<SeatViewModel>();
-            if (flight?.Sections != null) // Kiểm tra flight và sections không null
+            if (flight?.Sections != null)
             {
-                foreach (var section in flight.Sections.OrderBy(s => s.SectionName == "Thương gia" ? 0 : (s.SectionName == "Phổ thông" ? 1 : 2))) // Ưu tiên Thương gia, rồi Phổ thông
+                foreach (var section in flight.Sections.OrderBy(s => s.SectionName == "Thương gia" ? 0 : (s.SectionName == "Phổ thông" ? 1 : 2)))
                 {
-                    // Lấy TẤT CẢ ghế của section này để vẽ sơ đồ
                     var allSeatsInSection = await _context.Seats
                                                     .Where(s => s.SectionId == section.SectionId)
-                                                    .OrderBy(s => s.Row) // Sắp xếp theo hàng
-                                                    .ThenBy(s => s.Column) // Rồi đến cột
-                                                    .AsNoTracking() // Thêm AsNoTracking nếu chỉ đọc
+                                                    .OrderBy(s => s.Row)
+                                                    .ThenBy(s => s.Column)
+                                                    .AsNoTracking()
                                                     .ToListAsync();
 
                     foreach (var dbSeat in allSeatsInSection)
@@ -89,7 +81,6 @@ namespace PBL3.Controllers
                             Status = dbSeat.Status.ToString().ToLower(),
                             SectionName = section.SectionName,
                             CalculatedPrice = flight.Price * section.PriceMultiplier,
-                            // Thêm IsEmergencyExit, IsNearToilet nếu có
                         });
                     }
                 }
@@ -97,9 +88,9 @@ namespace PBL3.Controllers
 
 
             seatLayout = seatLayout
-                .OrderBy(s => s.SectionName == "Thương gia" ? 0 : (s.SectionName == "Phổ thông" ? 1 : 2)) // Sắp xếp theo SectionName (TG -> PT -> Khác)
+                .OrderBy(s => s.SectionName == "Thương gia" ? 0 : (s.SectionName == "Phổ thông" ? 1 : 2))
                 .ThenBy(s => s.Row)
-                .ThenBy(s => s.Column) // Dùng lại hàm helper nếu có
+                .ThenBy(s => s.Column)
                 .ToList();
 
 
@@ -107,21 +98,17 @@ namespace PBL3.Controllers
             {
                 FlightId = flight.FlightId,
                 FlightInfo = flight,
-                SeatsLayout = seatLayout, // seatsLayout đã được tạo ở trên
+                SeatsLayout = seatLayout,
                 FlightSections = flight.Sections.Select(s => new SectionInfoViewModel { Name = s.SectionName, PriceMultiplier = s.PriceMultiplier }).ToList(),
                 Passengers = Enumerable.Range(0, passengers).Select(i =>
                     (i == 0)
                         ? new PassengerBookingInfo { FullName = user.FullName, Age = user.Age, Gender = null }
                         : new PassengerBookingInfo()
                 ).ToList(),
-                // EstimatedTotalPrice sẽ được tính bằng JS
             };
 
-            return View("SelectSeats", viewModel);  // Trả về view SelectSeats.cshtml
+            return View("SelectSeats", viewModel);
         }
-
-
-        // POST: Booking/ConfirmBooking
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ConfirmBooking(BookingViewModel model)
@@ -132,7 +119,7 @@ namespace PBL3.Controllers
             {
                 _logger.LogWarning("ConfirmBooking failed: ModelState is invalid. Errors: {ModelStateErrors}", GetModelStateErrors(ModelState));
                 await ReloadViewModelForRetry(model, "Dữ liệu nhập không hợp lệ. Vui lòng kiểm tra lại.");
-                return View("SelectSeats", model); // Or wherever your seat selection view is
+                return View("SelectSeats", model);
             }
             if (model.Passengers == null || !model.Passengers.Any())
             {
@@ -157,16 +144,15 @@ namespace PBL3.Controllers
             }
 
             var user = await _userManager.GetUserAsync(User);
-            if (user == null) return Challenge(); // Or RedirectToPage("/Account/Login")
+            if (user == null) return Challenge();
 
             try
             {
-                // Fetch data WITHOUT transaction here, as we are just preparing for review
                 var flight = await _context.Flights
                                       .Include(f => f.Sections)
-                                      .Include(f => f.DepartureAirport) // For FlightDetailsViewModel
-                                      .Include(f => f.ArrivalAirport)   // For FlightDetailsViewModel
-                                      .AsNoTracking() // No tracking needed for review preparation
+                                      .Include(f => f.DepartureAirport)
+                                      .Include(f => f.ArrivalAirport)
+                                      .AsNoTracking()
                                       .FirstOrDefaultAsync(f => f.FlightId == model.FlightId);
 
                 if (flight == null)
@@ -202,7 +188,7 @@ namespace PBL3.Controllers
                         await ReloadViewModelForRetry(model, $"Lỗi: Không tìm thấy thông tin DB cho ghế đã chọn của hành khách {passengerInfo.FullName}.");
                         return View("SelectSeats", model);
                     }
-                    if (correspondingDbSeat.Status != "Available") // Check status even for preview
+                    if (correspondingDbSeat.Status != "Available")
                     {
                         await ReloadViewModelForRetry(model, $"Ghế {correspondingDbSeat.SeatNumber} (ID: {correspondingDbSeat.SeatId}) không còn khả dụng.");
                         return View("SelectSeats", model);
@@ -219,10 +205,9 @@ namespace PBL3.Controllers
 
                     paymentTickets.Add(new TicketPaymentViewModel
                     {
-                        // TicketId will be 0 or unassigned, it's a preview
                         PassengerName = passengerInfo.FullName,
                         SeatNumber = correspondingDbSeat.SeatNumber,
-                        SeatId = correspondingDbSeat.SeatId, // Important for ProcessPayment
+                        SeatId = correspondingDbSeat.SeatId,
                         Price = ticketPrice,
                         Section = correspondingDbSeat.Section.SectionName
                     });
@@ -234,22 +219,22 @@ namespace PBL3.Controllers
                     {
                         FlightId = flight.FlightId,
                         FlightNumber = flight.FlightNumber,
-                        AirlineName = flight.Airline, // Assuming Flight entity has Airline property
-                        DepartureAirportName = flight.DepartureAirport?.City ?? flight.StartingDestination.ToString(), // Use Airport Name
-                        ArrivalAirportName = flight.ArrivalAirport?.City ?? flight.ReachingDestination.ToString(),     // Use Airport Name
+                        AirlineName = flight.Airline,
+                        DepartureAirportName = flight.DepartureAirport?.City ?? flight.StartingDestination.ToString(),
+                        ArrivalAirportName = flight.ArrivalAirport?.City ?? flight.ReachingDestination.ToString(),
                         DepartureTime = flight.StartingTime,
                         ArrivalTime = flight.ReachingTime
                     },
                     Tickets = paymentTickets,
                     Total = calculatedTotalPrice,
-                    BookerName = user.FullName, // Assuming AppUser has FullName
+                    BookerName = user.FullName,
                     BookerEmail = user.Email
                 };
 
                 _logger.LogInformation("Prepared PaymentViewModel for Flight ID {FlightId}. Redirecting to payment review.", flight.FlightId);
-                return View("PaymentReview", paymentViewModel); // Pass to the new review view
+                return View("PaymentReview", paymentViewModel);
             }
-            catch (Exception ex) // Catch broader exceptions for unexpected issues during preparation
+            catch (Exception ex)
             {
                 _logger.LogError(ex, "Generic error during payment preparation for Flight ID {FlightId}.", model.FlightId);
                 await ReloadViewModelForRetry(model, "Đã xảy ra lỗi không mong muốn khi chuẩn bị thanh toán. Vui lòng thử lại.");
@@ -262,28 +247,22 @@ namespace PBL3.Controllers
         public async Task<IActionResult> ProcessPayment(PaymentViewModel model)
         {
             _logger.LogInformation("ProcessPayment POST received for Flight ID: {FlightId}.", model.FlightInfo?.FlightId);
-
-            // --- BASIC VALIDATION OF INCOMING MODEL ---
             if (model == null || model.FlightInfo == null || model.Tickets == null || !model.Tickets.Any())
             {
                 _logger.LogWarning("ProcessPayment failed: PaymentViewModel is invalid or incomplete.");
                 TempData["ErrorMessage"] = "Thông tin thanh toán không hợp lệ. Vui lòng thử đặt lại.";
-                return RedirectToAction("Index", "Home"); // Or back to flight search
+                return RedirectToAction("Index", "Home");
             }
 
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Challenge();
-
-            // --- XỬ LÝ ĐẶT VÉ TRONG TRANSACTION (Logic moved from original ConfirmBooking) ---
             using var transaction = await _context.Database.BeginTransactionAsync();
             _logger.LogInformation("Database transaction started for payment of Flight ID: {FlightId}.", model.FlightInfo.FlightId);
             try
             {
-                // --- RE-FETCH AND RE-VALIDATE DATA ---
-                // This is crucial for security and data integrity. Don't trust the model blindly.
                 var flight = await _context.Flights
-                                      .Include(f => f.Sections) // For price calculation
-                                      .FirstOrDefaultAsync(f => f.FlightId == model.FlightInfo.FlightId); // TRACKING NEEDED
+                                      .Include(f => f.Sections)
+                                      .FirstOrDefaultAsync(f => f.FlightId == model.FlightInfo.FlightId);
 
                 if (flight == null)
                 {
@@ -294,7 +273,7 @@ namespace PBL3.Controllers
                 var dbSeatsToBook = await _context.Seats
                                               .Include(s => s.Section)
                                               .Where(s => s.Section.FlightId == flight.FlightId && selectedSeatIdsFromModel.Contains(s.SeatId))
-                                              .ToListAsync(); // TRACKING NEEDED
+                                              .ToListAsync();
 
                 if (dbSeatsToBook.Count != selectedSeatIdsFromModel.Count)
                 {
@@ -309,7 +288,7 @@ namespace PBL3.Controllers
                 foreach (var ticketPreview in model.Tickets)
                 {
                     var seatToBook = dbSeatsToBook.FirstOrDefault(s => s.SeatId == ticketPreview.SeatId);
-                    if (seatToBook == null) // Should be caught by previous check, but defensive
+                    if (seatToBook == null)
                     {
                         throw new InvalidOperationException($"Lỗi hệ thống: Ghế ID {ticketPreview.SeatId} không tìm thấy trong DB sau khi xác thực.");
                     }
@@ -318,15 +297,13 @@ namespace PBL3.Controllers
                     {
                         throw new InvalidOperationException($"Xin lỗi, ghế {seatToBook.SeatNumber} đã được người khác đặt trong lúc bạn xem xét. Vui lòng chọn lại.");
                     }
-                    seatToBook.Status = "Booked"; // Update status
+                    seatToBook.Status = "Booked";
                     _context.Update(seatToBook);
 
                     if (seatToBook.Section == null) throw new InvalidOperationException($"Lỗi: Ghế {seatToBook.SeatNumber} không thuộc Section nào.");
 
                     var actualTicketPrice = flight.Price * seatToBook.Section.PriceMultiplier;
-                    reCalculatedTotalPrice += actualTicketPrice; // Recalculate for safety
-
-                    // Compare actual price with price from model - optional sanity check
+                    reCalculatedTotalPrice += actualTicketPrice;
                     if (actualTicketPrice != ticketPreview.Price)
                     {
                         _logger.LogWarning("Price mismatch for Seat ID {SeatId}. Model: {ModelPrice}, Calculated: {ActualPrice}. Using calculated.",
@@ -339,20 +316,17 @@ namespace PBL3.Controllers
                         FlightId = flight.FlightId,
                         SeatId = seatToBook.SeatId,
                         SectionId = seatToBook.SectionId,
-                        Price = actualTicketPrice, // Use re-calculated or validated price
+                        Price = actualTicketPrice,
                         OrderTime = DateTime.UtcNow,
-                        Status = TicketStatus.Pending_Book, // Mark as Pending_Book after "payment"
+                        Status = TicketStatus.Pending_Book,
                     };
                     _context.Tickets.Add(newTicket);
                     createdTickets.Add(newTicket);
                 }
-
-                // Final check of total price (optional, good for sanity)
                 if (reCalculatedTotalPrice != model.Total)
                 {
                     _logger.LogWarning("Total price mismatch. Model: {ModelTotal}, ReCalculated: {RecalculatedTotal}. Booking with re-calculated total.",
                                        model.Total, reCalculatedTotalPrice);
-                    // You might choose to throw an error or proceed with the re-calculated total.
                 }
 
 
@@ -364,16 +338,15 @@ namespace PBL3.Controllers
                 _logger.LogInformation("Payment processed and transaction committed. {TicketCount} tickets for Flight ID {FlightId}.", createdTickets.Count, flight.FlightId);
 
                 TempData["SuccessMessage"] = $"Thanh toán thành công cho {createdTickets.Count} hành khách! Tổng tiền: {reCalculatedTotalPrice:N0} VNĐ. Vé của bạn đã được xác nhận.";
-                // Instead of redirecting to a single ticket confirmation, redirect to booking history.
                 return RedirectToAction("Index", "BookingHistory"); 
             }
             catch (InvalidOperationException ex)
             {
                 await transaction.RollbackAsync();
                 _logger.LogWarning(ex, "Payment processing failed (InvalidOperationException) for Flight ID {FlightId}.", model.FlightInfo?.FlightId);
-                TempData["ErrorMessage"] = ex.Message; // Show specific error to user
+                TempData["ErrorMessage"] = ex.Message;
                                                        
-                return RedirectToAction("SelectSeats", new { flightId = model.FlightInfo?.FlightId }); // Or "Search", "Home"
+                return RedirectToAction("SelectSeats", new { flightId = model.FlightInfo?.FlightId });
             }
             catch (DbUpdateConcurrencyException ex)
             {
@@ -394,7 +367,7 @@ namespace PBL3.Controllers
         private async Task ReloadViewModelForRetry(BookingViewModel model, string errorMessage)
         {
             _logger.LogInformation("Reloading ViewModel for Flight ID {FlightId} after error: {ErrorMessage}", model.FlightId, errorMessage);
-            ModelState.AddModelError("", errorMessage); // Thêm lỗi vào ModelState để View hiển thị
+            ModelState.AddModelError("", errorMessage);
 
             if (model.FlightId <= 0) return;
 
@@ -405,10 +378,9 @@ namespace PBL3.Controllers
                                             .ThenInclude(sec => sec.Seats)
                                        .AsNoTracking()
                                        .FirstOrDefaultAsync(f => f.FlightId == model.FlightId);
-            var user = await _userManager.GetUserAsync(User); // Booker
+            var user = await _userManager.GetUserAsync(User);
 
             model.FlightInfo = flight;
-            // model.BookerInfo = user; // BookerInfo đã có trong BookingViewModel
 
             var seatLayout = new List<SeatViewModel>();
             if (flight?.Sections != null)
@@ -437,8 +409,6 @@ namespace PBL3.Controllers
             }
             model.SeatsLayout = seatLayout.OrderBy(s => s.Row).ThenBy(s => s.Column).ToList();
             model.FlightSections = flight?.Sections.Select(s => new SectionInfoViewModel { Name = s.SectionName, PriceMultiplier = s.PriceMultiplier }).ToList() ?? new List<SectionInfoViewModel>();
-
-            // Giữ lại thông tin hành khách đã nhập, nhưng xóa ghế đã chọn để họ chọn lại
             if (model.Passengers != null)
             {
                 foreach (var p in model.Passengers)

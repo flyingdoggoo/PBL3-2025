@@ -3,13 +3,12 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace PBL3.Controllers
 {
-    [Authorize(Roles = "Employee,Admin")] // Cho phép cả Admin truy cập (tùy chọn)
+    [Authorize(Roles = "Employee,Admin")] 
     public class EmployeeDashboardController : Controller
     {
         public IActionResult Index()
         {
-            // Có thể truyền dữ liệu tổng quan cho Employee vào đây
-            return View(); // Sẽ sử dụng _EmployeeLayout.cshtml
+            return View();
         }
     }
 }

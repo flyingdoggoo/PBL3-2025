@@ -32,7 +32,7 @@ namespace PBL3.Controllers
             _logger.LogInformation("GET SelectSeats called. FlightId: {FlightId}, Passengers: {Passengers}", flightId, passengers);
 
             if (flightId == null) return BadRequest("Thiếu mã chuyến bay.");
-            const int maxPassengersPerBooking = 6;
+            const int maxPassengersPerBooking = 10;
             if (passengers < 1 || passengers > maxPassengersPerBooking)
             {
                 TempData["ErrorMessage"] = $"Số lượng hành khách không hợp lệ (1-{maxPassengersPerBooking}).";
@@ -375,7 +375,7 @@ namespace PBL3.Controllers
                                        .Include(f => f.DepartureAirport)
                                        .Include(f => f.ArrivalAirport)
                                        .Include(f => f.Sections)
-                                            .ThenInclude(sec => sec.Seats)
+                                       .ThenInclude(sec => sec.Seats)
                                        .AsNoTracking()
                                        .FirstOrDefaultAsync(f => f.FlightId == model.FlightId);
             var user = await _userManager.GetUserAsync(User);

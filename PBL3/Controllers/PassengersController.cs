@@ -15,10 +15,12 @@ namespace PBL3.Controllers
     public class PassengersController : Controller
     {
         private readonly UserManager<AppUser> _userManager;
+        private readonly ApplicationDbContext _context;
 
-        public PassengersController(UserManager<AppUser> userManager)
+        public PassengersController(UserManager<AppUser> userManager, ApplicationDbContext context)
         {
             _userManager = userManager;
+            _context = context;
         }
 
         public async Task<IActionResult> Index(string sortOrder, string currentFilter, string searchString, int? pageNumber)
@@ -38,47 +40,40 @@ namespace PBL3.Controllers
             }
             ViewData["CurrentFilter"] = searchString;
 
-            var allPassengerUsers = (await _userManager.GetUsersInRoleAsync("Passenger")).ToList();
+            IQueryable<Passenger> passengersQuery = _context.Users.OfType<Passenger>();
 
-            IEnumerable<AppUser> filteredPassengers = allPassengerUsers;
             if (!string.IsNullOrEmpty(searchString))
             {
-                filteredPassengers = filteredPassengers.Where(s =>
-                    (s.FullName != null && s.FullName.Contains(searchString, StringComparison.OrdinalIgnoreCase)) ||
-                    (s.Email != null && s.Email.Contains(searchString, StringComparison.OrdinalIgnoreCase)));
+                passengersQuery = passengersQuery.Where(s =>
+                   (s.FullName != null && s.FullName.Contains(searchString, StringComparison.OrdinalIgnoreCase)) ||
+                   (s.Email != null && s.Email.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+                );
             }
 
             switch (sortOrder)
             {
                 case "name_desc":
-                    filteredPassengers = filteredPassengers.OrderByDescending(s => s.FullName);
+                    passengersQuery = passengersQuery.OrderByDescending(s => s.FullName);
                     break;
                 case "Email":
-                    filteredPassengers = filteredPassengers.OrderBy(s => s.Email);
+                    passengersQuery = passengersQuery.OrderBy(s => s.Email);
                     break;
                 case "email_desc":
-                    filteredPassengers = filteredPassengers.OrderByDescending(s => s.Email);
+                    passengersQuery = passengersQuery.OrderByDescending(s => s.Email);
                     break;
                 case "Age":
-                    filteredPassengers = filteredPassengers.OrderBy(s => s.Age);
+                    passengersQuery = passengersQuery.OrderBy(s => s.Age);
                     break;
                 case "age_desc":
-                    filteredPassengers = filteredPassengers.OrderByDescending(s => s.Age);
+                    passengersQuery = passengersQuery.OrderByDescending(s => s.Age);
                     break;
                 default:
-                    filteredPassengers = filteredPassengers.OrderBy(s => s.FullName);
+                    passengersQuery = passengersQuery.OrderBy(s => s.FullName);
                     break;
             }
 
             int pageSize = 10;
-            int count = filteredPassengers.Count();
-
-            var itemsForPage = filteredPassengers
-                                .Skip(((pageNumber ?? 1) - 1) * pageSize)
-                                .Take(pageSize)
-                                .ToList();
-
-            var paginatedPassengers = new PaginatedList<AppUser>(itemsForPage, count, pageNumber ?? 1, pageSize);
+            var paginatedPassengers = await PaginatedList<AppUser>.CreateAsync(passengersQuery, pageNumber ?? 1, pageSize);
 
             return View(paginatedPassengers);
         }
@@ -128,7 +123,6 @@ namespace PBL3.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Employee")]
         public async Task<IActionResult> Edit(string id, EditPassengerViewModel model)
         {
             if (id != model.Id)
@@ -229,7 +223,7 @@ namespace PBL3.Controllers
             return View(passenger);
         }
 
-        [HttpPost, ActionName("Delete")]
+        [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(string id)
         {

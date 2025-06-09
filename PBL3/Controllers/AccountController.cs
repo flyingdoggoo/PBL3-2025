@@ -116,7 +116,6 @@ public class AccountController : Controller
                 }
                 await _userManager.AddToRoleAsync(user, "Passenger");
 
-                TempData["SuccessMessage"] = "Đăng ký thành công! Vui lòng đăng nhập.";
                 return RedirectToAction(nameof(Login));
             }
             foreach (var error in result.Errors)
@@ -302,7 +301,7 @@ public class AccountController : Controller
         var expiryTime = now.AddMinutes(OtpValidityMinutes);
 
         var previousOtps = await _context.UserOtps
-            .Where(o => o.UserId == user.Id && !o.IsVerified && o.ExpiryTimestampUtc > now)
+            .Where(o => o.UserId == user.Id)
             .ToListAsync();
 
         if (previousOtps.Any())
@@ -326,8 +325,7 @@ public class AccountController : Controller
         }
         catch (DbUpdateException ex) 
         {
-            System.Diagnostics.Debug.WriteLine($"Error saving OTP to DB: {ex.Message}");
-            ModelState.AddModelError(string.Empty, "A database error occurred. Please try again.");
+            ModelState.AddModelError(string.Empty, "An error occurred. Please try again.");
             return false;
         }
 
@@ -339,24 +337,16 @@ public class AccountController : Controller
                             $"<p>Your One-Time Password (OTP) for resetting your password is: <strong>{shortOtpCode}</strong></p>" +
                             $"<p>This OTP is valid for {OtpValidityMinutes} minutes.</p>" +
                             $"<p>If you did not request this, please ignore this email.</p>" +
-                            $"<p>Thanks,<br/>Your Application Team</p>";
+                            $"<p>Thanks,<br/>Aggin Airline.</p>";
 
             await _emailService.SendEmailAsync(emailForSending, emailSubject, emailBody);
             return true; 
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error sending OTP email: {ex.Message}");
             ModelState.AddModelError(string.Empty, "An error occurred while trying to send the OTP. Please try again later.");
             _context.UserOtps.Remove(userOtpRecord);
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateException dbEx)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error cleaning up OTP from DB after failed send: {dbEx.Message}");
-            }
+            await _context.SaveChangesAsync();
             return false; 
         }
     }

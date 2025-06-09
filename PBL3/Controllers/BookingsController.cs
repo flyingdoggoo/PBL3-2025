@@ -292,7 +292,7 @@ namespace PBL3.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,Employee, Passenger")]
+        [Authorize]
         public async Task<IActionResult> CancelPendingBookingByAnyone(int id)
         {
             var user = await _userManager.GetUserAsync(User);
